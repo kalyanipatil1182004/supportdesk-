@@ -1,3 +1,4 @@
+
 import { generateTicketId } from "./ticket";
 import { csvToJson } from "./csv";
 import * as fs from "node:fs";
@@ -14,8 +15,24 @@ if (command === "ticket") {
     console.error("Usage: npm run cli -- csv <input.csv>");
     process.exitCode = 1;
   } else {
-    const csv = fs.readFileSync(inputFile, "utf8");
-    console.log(JSON.stringify(csvToJson(csv), null, 2));
+    try {
+      const csv = fs.readFileSync(inputFile, "utf8");
+      console.log(JSON.stringify(csvToJson(csv), null, 2));
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
+        console.error("Error: CSV file not found.");
+      } else if (error instanceof Error) {
+        console.error(`Error: ${error.message}`);
+      } else {
+        console.error("Error: Something went wrong.");
+      }
+
+      process.exitCode = 1;
+    }
   }
 } else {
   console.log("Usage:");

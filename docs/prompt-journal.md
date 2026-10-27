@@ -1,25 +1,37 @@
-# Prompt Journal — SupportDesk
+# Day 5 — Prompt Journal
 
-## Entry 1: Git Repository Setup
+## 1. Plan-First Prompt
 
-**Task:** Set up the SupportDesk Git repository.
+**Goal:** Build a TypeScript CLI for ticket ID generation and CSV-to-JSON conversion.
 
-**Prompt:** Explain how to initialize a Git repository, check its status, create a feature branch, and connect a remote GitHub repository.
+**Prompt:**
+Before writing code, create a step-by-step implementation plan for a TypeScript CLI that generates ticket IDs and converts CSV files to JSON. Include file structure, validation, error handling, and testing. Do not write code yet.
 
-**Learning:** Learned the basic Git workflow and how to connect a local repository to GitHub.
+**Verification / Outcome:** Review the plan and implement the features step by step.
 
-## Entry 2: README Documentation
+## 2. Clarifying-Question Prompt
 
-**Task:** Create project documentation.
+**Goal:** Clarify requirements before coding.
 
-**Prompt:** Help me write a README file describing the SupportDesk project, its features, technologies, and setup instructions.
+**Prompt:**
+Before implementing the CSV-to-JSON converter, ask me the important clarifying questions about required columns, malformed rows, empty input, and invalid files. Do not write code until the requirements are clear.
 
-**Learning:** Learned how to document a software project's purpose, features, and setup steps.
+**Verification / Outcome:** Confirm the required behavior before implementation.
 
-## Entry 3: Git Ignore Configuration
+## 3. Test-First Prompt
 
-**Task:** Prevent unnecessary and sensitive files from being committed.
+**Goal:** Write tests before implementation.
 
-**Prompt:** Explain which files should be excluded from Git, such as node_modules, build output, logs, and environment files.
+**Prompt:**
+Write Jest tests for the TypeScript ticket ID generator and CSV-to-JSON converter before writing the implementation. Cover the expected ticket ID format, unique IDs for different sequences, valid CSV, header-value mapping, empty input, missing required columns, malformed rows, and invalid input.
 
-**Learning:** Learned why `.gitignore` is important and why secret values should not be committed.
+**Verification / Outcome:** Run the tests and implement or fix the code until the tests pass.
+
+## 4. Structured-Debugging Prompt
+
+**Goal:** Find and fix a coding error.
+
+**Prompt:**
+Help debug my TypeScript CLI using this structure: (1) expected behavior, (2) actual behavior, (3) likely root cause, (4) evidence or checks, (5) smallest safe fix, and (6) tests to rerun. Do not guess without explaining how to verify the cause.
+
+**Verification / Outcome:** Verify the root cause, apply the fix, and rerun the tests.
