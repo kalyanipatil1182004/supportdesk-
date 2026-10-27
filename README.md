@@ -1,30 +1,60 @@
 # SupportDesk
 
-SupportDesk is a TypeScript CLI project designed to manage support tickets and convert CSV data into JSON format.
+A TypeScript CLI project to generate ticket IDs and convert support ticket CSV data into JSON.
 
 ## Features
 
-- Generate unique ticket IDs.
-- Convert CSV files into JSON.
-- Run automated tests using Jest.
-- Use TypeScript for type-safe development.
+- Ticket ID generation
+- CSV-to-JSON conversion
+- CSV input validation
+- Error handling
+- Automated Jest tests
 
-## Technologies Used
+## Setup
 
-- TypeScript
-- Node.js
-- Jest
-- Git and GitHub
-
-## Project Setup
-
-### 1. Install Dependencies
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-### 2. Run Tests
+## CLI Usage
+
+### Generate a Ticket ID
+
+```bash
+npm run cli -- ticket 1
+```
+
+Example output format: `TKT-YYYYMMDD-001`
+
+### Convert CSV to JSON
+
+```bash
+npm run cli -- csv data/tickets.csv
+```
+
+### Required CSV Headers
+
+```text
+id,title,status,priority
+```
+
+All required columns and values must be present. Duplicate or empty headers, malformed rows, missing required values, and empty input produce errors.
+
+For a missing file, the CLI displays:
+
+```text
+Error: CSV file not found.
+```
+
+## Build
+
+```bash
+npm run build
+```
+
+## Run Tests
 
 ```bash
 npm test
@@ -32,11 +62,12 @@ npm test
 
 ## Project Structure
 
-- `src/` — Source code
-- `tests/` — Automated test files
-- `data/` — Sample data files
-- `docs/` — Project documentation
+- `src/` — TypeScript source files
+- `tests/` — Jest tests
+- `data/` — Sample CSV data
+- `docs/` — Prompt journal and documentation
+- `dist/` — Compiled output
 
 ## Purpose
 
-This project is part of a software development learning task focused on TypeScript CLI development, CSV-to-JSON conversion, testing, and Git/GitHub workflows.
+This project demonstrates TypeScript CLI development, CSV validation, debugging, automated testing, and Git/GitHub workflows.
