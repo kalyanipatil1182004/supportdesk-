@@ -35,3 +35,10 @@ Write Jest tests for the TypeScript ticket ID generator and CSV-to-JSON converte
 Help debug my TypeScript CLI using this structure: (1) expected behavior, (2) actual behavior, (3) likely root cause, (4) evidence or checks, (5) smallest safe fix, and (6) tests to rerun. Do not guess without explaining how to verify the cause.
 
 **Verification / Outcome:** Verify the root cause, apply the fix, and rerun the tests.
+**AI response — useful/missing:** The structured debugging approach helped identify the expected and actual output. I verified the issue using the existing Jest tests.
+
+**Change made:** Temporarily changed the day padding from `padStart(2, "0")` to `padStart(1, "0")` to introduce a reversible bug. Restored `padStart(2, "0")` after identifying the root cause.
+
+**Verification and actual outcome:** The ticket tests failed (3 failed, 3 passed) with the incorrect date format `TKT-2026012-001`. After fixing the padding, all 14 tests passed across 2 test suites.
+
+**Next time:** I will record the failing test output, isolate the root cause, make the smallest fix, and rerun the complete test suite before committing.
