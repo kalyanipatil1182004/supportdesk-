@@ -1,4 +1,9 @@
-import { PrismaClient, TicketStatus, TicketPriority } from "@prisma/client";
+
+import {
+  PrismaClient,
+  TicketStatus,
+  TicketPriority,
+} from "@prisma/client";
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -18,7 +23,6 @@ async function main() {
     readFileSync(filePath, "utf-8")
   );
 
-  // Create one fictional demo customer
   const creator = await prisma.user.upsert({
     where: { email: "demo.customer@example.com" },
     update: {},
@@ -31,20 +35,27 @@ async function main() {
   });
 
   const statusMap: Record<string, TicketStatus> = {
-    "Open": "open",
+    Open: "open",
     "In Progress": "in_progress",
-    "Resolved": "resolved",
+    Resolved: "resolved",
   };
 
   const priorityMap: Record<string, TicketPriority> = {
-    "High": "P1",
-    "Medium": "P2",
-    "Low": "P3",
+    High: "P1",
+    Medium: "P2",
+    Low: "P3",
   };
 
   for (const item of tickets) {
-    await prisma.ticket.create({
-      data: {
+    await prisma.ticket.upsert({
+      where: { seedId: item.id },
+      update: {
+        title: item.title,
+        status: statusMap[item.status],
+        priority: priorityMap[item.priority],
+      },
+      create: {
+        seedId: item.id,
         title: item.title,
         description: `Sample ticket: ${item.title}`,
         status: statusMap[item.status],
@@ -54,7 +65,7 @@ async function main() {
     });
   }
 
-  console.log(`Successfully seeded ${tickets.length} tickets.`);
+  console.log(`Successfully processed ${tickets.length} tickets.`);
 }
 
 main()

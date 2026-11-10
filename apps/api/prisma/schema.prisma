@@ -45,6 +45,7 @@ model User {
 
 model Ticket {
   id          Int            @id @default(autoincrement())
+  seedId      String?        @unique
   title       String
   description String
   status      TicketStatus   @default(open)
