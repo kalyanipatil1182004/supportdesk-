@@ -26,3 +26,4 @@ tests/*.d.ts
 tests/*.js.map
 src/*.d.ts.map
 tests/*.d.ts.map
+/generated/prisma
