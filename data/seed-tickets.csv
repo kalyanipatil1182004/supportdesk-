@@ -1,0 +1,51 @@
+id,title,status,priority
+1,Login issue,Open,High
+2,Network issue,In Progress,Medium
+3,Password reset,Open,Low
+4,Email not working,Open,High
+5,Website loading slowly,In Progress,Medium
+6,Account locked,Open,High
+7,Profile update issue,Resolved,Low
+8,Payment page error,Open,High
+9,Dashboard not loading,In Progress,Medium
+10,Unable to upload file,Open,Medium
+11,Incorrect user details,Resolved,Low
+12,Application crash,Open,High
+13,Notification not received,Open,Low
+14,Search feature issue,In Progress,Medium
+15,Report download failed,Open,High
+16,Session timeout,Resolved,Medium
+17,Mobile view problem,Open,Low
+18,Registration error,Open,High
+19,Ticket status not updating,In Progress,Medium
+20,Attachment missing,Open,Medium
+21,Duplicate ticket created,Resolved,Low
+22,Admin panel error,Open,High
+23,Slow database response,In Progress,High
+24,Unable to edit profile,Open,Medium
+25,Logout issue,Resolved,Low
+26,Access permission error,Open,High
+27,Incorrect dashboard count,In Progress,Medium
+28,File preview not working,Open,Low
+29,Comment not saving,Open,Medium
+30,Email verification issue,Resolved,Low
+31,API response error,Open,High
+32,Page not found,Open,Medium
+33,User role not updating,In Progress,High
+34,Password validation error,Open,Medium
+35,Session expired unexpectedly,Resolved,Low
+36,Data export issue,Open,High
+37,Chat support unavailable,Open,Medium
+38,Image upload problem,In Progress,Low
+39,Ticket assignment error,Open,High
+40,Missing customer information,Resolved,Low
+41,Application response delay,Open,Medium
+42,Invalid search results,In Progress,Low
+43,Database connection error,Open,High
+44,Duplicate email warning,Resolved,Medium
+45,Settings page not saving,Open,Medium
+46,Two factor login issue,Open,High
+47,Report formatting problem,In Progress,Low
+48,User account deactivation,Open,Medium
+49,Support notification delay,Resolved,Low
+50,Ticket history not visible,Open,High
