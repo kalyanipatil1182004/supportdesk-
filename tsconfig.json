@@ -11,6 +11,6 @@
     "types": ["node", "jest"],
     "verbatimModuleSyntax": false
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "include": ["src/**/*.ts", "tests/**/*.ts", "apps/api/src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
