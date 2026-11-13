@@ -1,7 +1,11 @@
 
 import express from "express";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import helmet from "helmet";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import { parse } from "yaml";
 
 import { requestLogger } from "./middlewares/request-logger";
 import { errorHandler } from "./middlewares/error-handler";
@@ -9,6 +13,9 @@ import authRoutes from "./routes/auth.routes";
 import ticketsRoutes from "./routes/tickets.routes";
 
 const app = express();
+const openApiSpec = parse(
+  readFileSync(resolve(process.cwd(), "docs/openapi.yaml"), "utf8")
+);
 
 const corsOrigin = process.env.CORS_ORIGIN;
 
@@ -34,6 +41,8 @@ app.use(
 
 app.use(express.json());
 app.use(requestLogger);
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 app.get("/health", (_req, res) => {
   res.status(200).json({

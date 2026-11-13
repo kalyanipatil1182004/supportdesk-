@@ -1,5 +1,6 @@
 
 import bcrypt from "bcrypt";
+import { Prisma } from "@prisma/client";
 import { authService } from "../apps/api/src/services/auth.service";
 import { usersRepository } from "../apps/api/src/repositories/users.repository";
 
@@ -91,6 +92,38 @@ describe("Authentication Service", () => {
     expect(createMock).not.toHaveBeenCalled();
   });
 
+  test("rejects a concurrent duplicate email reported by the repository", async () => {
+    findByEmailMock.mockResolvedValue(null);
+    createMock.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+        code: "P2002",
+        clientVersion: "test",
+      })
+    );
+
+    const result = await authService.register({
+      name: "Test User",
+      email: "test@example.com",
+      password,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  test("propagates unexpected registration repository errors", async () => {
+    const error = new Error("repository unavailable");
+    findByEmailMock.mockResolvedValue(null);
+    createMock.mockRejectedValue(error);
+
+    await expect(
+      authService.register({
+        name: "Test User",
+        email: "test@example.com",
+        password,
+      })
+    ).rejects.toBe(error);
+  });
+
   test("logs in successfully with correct password", async () => {
     const passwordHash = await bcrypt.hash(password, 4);
 
@@ -127,5 +160,28 @@ describe("Authentication Service", () => {
     });
 
     expect(result.success).toBe(false);
+  });
+
+  test("rejects login when the user does not exist", async () => {
+    findByEmailMock.mockResolvedValue(null);
+
+    await expect(
+      authService.login({
+        email: "missing@example.com",
+        password,
+      })
+    ).resolves.toEqual({ success: false });
+  });
+
+  test("propagates unexpected login repository errors", async () => {
+    const error = new Error("repository unavailable");
+    findByEmailMock.mockRejectedValue(error);
+
+    await expect(
+      authService.login({
+        email: "test@example.com",
+        password,
+      })
+    ).rejects.toBe(error);
   });
 });

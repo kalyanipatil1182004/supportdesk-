@@ -3,16 +3,18 @@ import type { z } from "zod";
 import type { UserRole } from "@prisma/client";
 import {
   createTicketSchema,
+  ticketListQuerySchema,
   updateTicketSchema,
 } from "../validators/tickets.schema";
 
 type CreateTicketInput = z.infer<typeof createTicketSchema>;
+type TicketListQuery = z.infer<typeof ticketListQuerySchema>;
 type UpdateTicketInput = z.infer<typeof updateTicketSchema>;
 
 export const ticketsService = {
-  findAll(userId: number, role: UserRole) {
+  findAll(userId: number, role: UserRole, query: TicketListQuery) {
     const creatorId = role === "customer" ? userId : undefined;
-    return ticketsRepository.findAll(creatorId);
+    return ticketsRepository.findAll(creatorId, query);
   },
 
   async findById(id: number, userId: number, role: UserRole) {

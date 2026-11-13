@@ -2,22 +2,42 @@ import type { Request, Response } from "express";
 import { ticketsService } from "../services/tickets.service";
 import {
   createTicketSchema,
+  ticketListQuerySchema,
   updateTicketSchema,
 } from "../validators/tickets.schema";
 
 export const ticketsController = {
   async getAll(req: Request, res: Response) {
+    const parsed = ticketListQuerySchema.safeParse(req.query);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        data: null,
+        error: { message: "Invalid ticket query" },
+        meta: { issues: parsed.error.issues },
+      });
+      return;
+    }
+
     const user = req.user!;
 
-    const tickets = await ticketsService.findAll(
+    const result = await ticketsService.findAll(
       user.id,
-      user.role
+      user.role,
+      parsed.data
     );
 
     res.status(200).json({
-      data: tickets,
+      data: result.tickets,
       error: null,
-      meta: {},
+      meta: {
+        pagination: {
+          page: parsed.data.page,
+          limit: parsed.data.limit,
+          total: result.total,
+          totalPages: Math.ceil(result.total / parsed.data.limit),
+        },
+      },
     });
   },
 
