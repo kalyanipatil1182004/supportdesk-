@@ -42,3 +42,31 @@ Help debug my TypeScript CLI using this structure: (1) expected behavior, (2) ac
 **Verification and actual outcome:** The ticket tests failed (3 failed, 3 passed) with the incorrect date format `TKT-2026012-001`. After fixing the padding, all 14 tests passed across 2 test suites.
 
 **Next time:** I will record the failing test output, isolate the root cause, make the smallest fix, and rerun the complete test suite before committing.
+# Day 13 — Frontend Foundations with AI
+
+## 5. Frontend Architecture Prompt
+
+**Goal:** Build the frontend foundation for the existing SupportDesk application.
+
+**Prompt:**
+Review the existing SupportDesk backend and repository structure before implementing the frontend. Build the frontend using React, Vite, TypeScript and Tailwind CSS. Use a shared API client configured through environment variables, authentication context, a protected dashboard, and a responsive login page. Do not create a new repository or overwrite existing backend functionality.
+
+**Verification / Outcome:** Verify the frontend build, inspect the structure, and confirm the API integration matches the existing backend.
+
+## 6. Backend Integration Prompt
+
+**Goal:** Integrate the login frontend with the existing backend API.
+
+**Prompt:**
+Inspect the existing authentication API, validation rules, response envelope, and error handling before integrating login. Use the existing API endpoint and response structure. Do not invent backend endpoints or change backend authentication behavior.
+
+**Verification / Outcome:** Verify API connectivity, validation, login errors, and authentication state.
+
+## 7. AI Code Review Prompt
+
+**Goal:** Review frontend code for maintainability, security, and functionality.
+
+**Prompt:**
+Review my SupportDesk frontend code for architecture, TypeScript correctness, API error handling, authentication state, responsive layout, accessibility, and missing tests. Identify issues with evidence and suggest the smallest safe fixes. Do not rewrite the entire application or modify unrelated backend code.
+
+**Verification / Outcome:** Review findings, apply relevant fixes, and rerun the frontend build and manual tests.
