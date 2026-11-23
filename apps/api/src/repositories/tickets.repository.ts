@@ -81,7 +81,6 @@ export const ticketsRepository = {
     if (result.count === 0) {
       return null;
     }
-
     return prisma.ticket.findUnique({
       where: { id },
     });

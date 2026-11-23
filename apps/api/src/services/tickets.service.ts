@@ -44,6 +44,12 @@ export const ticketsService = {
     userId: number,
     role: UserRole
   ) {
+    if (role === "customer" && data.status !== undefined) {
+      throw Object.assign(new Error("Access forbidden"), {
+        statusCode: 403,
+      });
+    }
+
     const creatorId = role === "customer" ? userId : undefined;
 
     const ticket = await ticketsRepository.update(

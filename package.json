@@ -7,6 +7,9 @@
     "test": "jest",
     "test:integration": "jest --config jest.integration.config.cjs --runInBand",
     "test:integration:db": "node scripts/deploy-test-migrations.cjs",
+    "create:dev-agent": "tsx scripts/create-dev-agent.ts",
+    "create:dev-test-accounts": "tsx scripts/create-dev-test-accounts.ts",
+    "create:test-agent": "tsx scripts/create-test-agent.ts",
     "build": "tsc",
     "cli": "tsx src/cli.ts"
   },

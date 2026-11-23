@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import { useAuth } from "../context/AuthContext";
+import { loginAndNavigateToDashboard } from "../login-navigation";
 
 interface LoginFormData {
   email: string;
@@ -22,7 +23,13 @@ function LoginPage() {
     setServerError("");
 
     try {
-      await login(data);
+      await loginAndNavigateToDashboard(
+        login,
+        data,
+        (hash) => {
+          window.location.hash = hash;
+        }
+      );
     } catch (error) {
       setServerError(
         error instanceof Error ? error.message : "Something went wrong."
@@ -31,11 +38,11 @@ function LoginPage() {
   };
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 py-8 sm:px-8">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 py-8 transition-colors sm:px-8 dark:bg-slate-950">
       <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-blue-600/20 blur-3xl" />
       <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl" />
 
-      <section className="relative grid w-full max-w-6xl overflow-hidden rounded-3xl bg-white shadow-2xl shadow-black/30 lg:grid-cols-2">
+      <section className="relative grid w-full max-w-6xl overflow-hidden rounded-3xl bg-white shadow-2xl shadow-black/30 dark:bg-slate-900 dark:shadow-black/60 lg:grid-cols-2">
         <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-blue-700 via-blue-800 to-slate-950 p-12 text-white lg:flex">
           <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border border-white/10" />
           <div className="absolute -right-12 -top-12 h-72 w-72 rounded-full border border-white/10" />
@@ -69,7 +76,7 @@ function LoginPage() {
           </div>
 
           <div className="relative flex items-center gap-3 text-sm text-blue-100/70">
-            <div className="h-2 w-2 rounded-full bg-emerald-400" />
+            <div className="h-2 w-2 rounded-full bg-blue-400" />
             Your support workspace, all in one place.
           </div>
         </div>
@@ -82,7 +89,7 @@ function LoginPage() {
                   S
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-slate-900">
+                  <h1 className="text-xl font-bold text-slate-900 dark:text-white">
                     SupportDesk
                   </h1>
                   <p className="text-xs text-slate-500">
@@ -96,10 +103,10 @@ function LoginPage() {
               <p className="mb-3 text-sm font-semibold text-blue-600">
                 YOUR WORKSPACE
               </p>
-              <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
                 Sign in to your account
               </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-500">
+              <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
                 Welcome back! Enter your details to continue.
               </p>
             </div>
@@ -108,7 +115,7 @@ function LoginPage() {
               <div>
                 <label
                   htmlFor="email"
-                  className="mb-2 block text-sm font-semibold text-slate-700"
+                  className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
                 >
                   Email Address
                 </label>
@@ -118,7 +125,7 @@ function LoginPage() {
                   autoComplete="email"
                   placeholder="name@example.com"
                   aria-invalid={Boolean(errors.email)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-950 dark:focus:ring-blue-950"
                   {...register("email", {
                     required: "Email is required",
                   })}
@@ -133,7 +140,7 @@ function LoginPage() {
               <div>
                 <label
                   htmlFor="password"
-                  className="mb-2 block text-sm font-semibold text-slate-700"
+                  className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
                 >
                   Password
                 </label>
@@ -143,7 +150,7 @@ function LoginPage() {
                   autoComplete="current-password"
                   placeholder="Enter your password"
                   aria-invalid={Boolean(errors.password)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-950 dark:focus:ring-blue-950"
                   {...register("password", {
                     required: "Password is required",
                   })}
@@ -158,7 +165,7 @@ function LoginPage() {
               {serverError && (
                 <p
                   role="alert"
-                  className="rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700"
+                  className="rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
                 >
                   {serverError}
                 </p>

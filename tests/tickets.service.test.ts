@@ -116,6 +116,21 @@ describe("ticketsService", () => {
   });
 
   describe("update", () => {
+    test("rejects customer status updates with a 403 error", async () => {
+      await expect(
+        ticketsService.update(
+          7,
+          { status: "resolved" },
+          12,
+          "customer"
+        )
+      ).rejects.toMatchObject({
+        message: "Access forbidden",
+        statusCode: 403,
+      });
+      expect(updateMock).not.toHaveBeenCalled();
+    });
+
     test("passes customer ownership scope and returns the updated ticket", async () => {
       const ticket = { id: 7, title: "Updated title", creatorId: 12 };
       const data = { title: "Updated title" };

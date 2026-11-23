@@ -16,13 +16,22 @@ export function errorHandler(
     console.error("API Error:", error);
   }
 
+  let message = "Internal server error";
+
+  if (statusCode === 400) {
+    message = error.message || "Invalid request";
+  } else if (statusCode === 401) {
+    message = error.message || "Authentication required";
+  } else if (statusCode === 403) {
+    message = error.message || "Access forbidden";
+  } else if (statusCode === 404) {
+    message = "Ticket not found";
+  }
+
   res.status(statusCode).json({
     data: null,
     error: {
-      message:
-        statusCode === 404
-          ? "Ticket not found"
-          : "Internal server error",
+      message,
     },
     meta: {},
   });

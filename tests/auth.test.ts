@@ -124,27 +124,32 @@ describe("Authentication Service", () => {
     ).rejects.toBe(error);
   });
 
-  test("logs in successfully with correct password", async () => {
-    const passwordHash = await bcrypt.hash(password, 4);
+  test.each(["customer", "agent", "admin"] as const)(
+    "logs in successfully for the %s role with the correct password",
+    async (role) => {
+      const passwordHash = await bcrypt.hash(password, 4);
 
-    findByEmailMock.mockResolvedValue({
-      ...existingUser,
-      passwordHash,
-    });
+      findByEmailMock.mockResolvedValue({
+        ...existingUser,
+        passwordHash,
+        role,
+      });
 
-    const result = await authService.login({
-      email: "test@example.com",
-      password,
-    });
+      const result = await authService.login({
+        email: "test@example.com",
+        password,
+      });
 
-    expect(result.success).toBe(true);
+      expect(result.success).toBe(true);
 
-    if (result.success) {
-      expect(result.token).toBeTruthy();
-      expect(result.user.email).toBe("test@example.com");
-      expect(result.user).not.toHaveProperty("passwordHash");
+      if (result.success) {
+        expect(result.token).toBeTruthy();
+        expect(result.user.email).toBe("test@example.com");
+        expect(result.user.role).toBe(role);
+        expect(result.user).not.toHaveProperty("passwordHash");
+      }
     }
-  });
+  );
 
   test("rejects login with an incorrect password", async () => {
     const passwordHash = await bcrypt.hash(password, 4);
