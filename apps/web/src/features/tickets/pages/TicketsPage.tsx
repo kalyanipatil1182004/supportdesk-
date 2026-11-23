@@ -2,8 +2,11 @@
 import { useState } from "react";
 import { useAuth } from "../../auth/context/AuthContext";
 import AppLayout from "../../../components/AppLayout";
+import Badge from "../../../components/Badge";
+import Button from "../../../components/Button";
+import Table from "../../../components/Table";
 import { useTickets } from "../hooks/useTickets";
-import type { TicketStatus, TicketPriority } from "../../../types/ticket";
+import type { Ticket, TicketStatus, TicketPriority } from "../../../types/ticket";
 
 function TicketsPage() {
   const { token } = useAuth();
@@ -28,19 +31,82 @@ function TicketsPage() {
     window.location.hash = `#ticket/${ticketId}`;
   }
 
-  const statusColors: Record<TicketStatus, string> = {
-    open: "bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300",
-    in_progress: "bg-indigo-50 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300",
-    waiting_on_customer: "bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
-    resolved: "bg-green-50 text-green-800 dark:bg-green-950/60 dark:text-green-300",
-    closed: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  const statusVariants: Record<
+    TicketStatus,
+    "blue" | "indigo" | "amber" | "green" | "slate"
+  > = {
+    open: "blue",
+    in_progress: "indigo",
+    waiting_on_customer: "amber",
+    resolved: "green",
+    closed: "slate",
   };
+
+  const columns = [
+    {
+      key: "id",
+      header: "Ticket ID",
+      className: "whitespace-nowrap font-semibold text-blue-700 dark:text-blue-400",
+      render: (ticket: Ticket) => `#${ticket.id}`,
+    },
+    {
+      key: "title",
+      header: "Title",
+      className: "min-w-52 font-medium text-slate-800 dark:text-slate-100",
+      render: (ticket: Ticket) => (
+        <>
+          {ticket.title}
+          <p className="mt-1 max-w-sm truncate text-xs font-normal text-slate-500 dark:text-slate-400">
+            {ticket.description}
+          </p>
+        </>
+      ),
+    },
+    {
+      key: "category",
+      header: "Category",
+      render: (ticket: Ticket) => ticket.category || "General",
+    },
+    {
+      key: "priority",
+      header: "Priority",
+      className: "whitespace-nowrap font-semibold",
+      render: (ticket: Ticket) => ticket.priority,
+    },
+    {
+      key: "status",
+      header: "Status",
+      className: "whitespace-nowrap",
+      render: (ticket: Ticket) => (
+        <Badge variant={statusVariants[ticket.status]}>
+          {ticket.status.replace(/_/g, " ")}
+        </Badge>
+      ),
+    },
+    {
+      key: "createdAt",
+      header: "Created",
+      className: "whitespace-nowrap text-slate-500 dark:text-slate-400",
+      render: (ticket: Ticket) =>
+        new Date(ticket.createdAt).toLocaleDateString(),
+    },
+  ];
 
   return (
     <AppLayout>
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.hash = "#dashboard";
+              }}
+              className="mb-3 inline-flex items-center gap-2 rounded-lg text-sm font-semibold text-blue-700 transition hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              <span aria-hidden="true">←</span>
+              Back to Overview
+            </button>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
               All Tickets
             </h2>
@@ -49,18 +115,18 @@ function TicketsPage() {
             </p>
           </div>
 
-          <button
+          <Button
             onClick={() => {
               window.location.hash = "#new-ticket";
             }}
-            className="rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
           >
             + New Ticket
-          </button>
+          </Button>
         </div>
 
         <div className="flex flex-wrap gap-3">
           <select
+            aria-label="Filter tickets by status"
             value={status}
             onChange={(event) => {
               setStatus(event.target.value as TicketStatus | "");
@@ -77,6 +143,7 @@ function TicketsPage() {
           </select>
 
           <select
+            aria-label="Filter tickets by priority"
             value={priority}
             onChange={(event) => {
               setPriority(event.target.value as TicketPriority | "");
@@ -93,107 +160,56 @@ function TicketsPage() {
         </div>
 
         {isLoading && (
-          <p className="rounded-xl bg-white p-6 dark:bg-slate-900 dark:text-slate-300">
+          <p
+            role="status"
+            className="rounded-xl bg-white p-6 dark:bg-slate-900 dark:text-slate-300"
+          >
             Loading tickets...
           </p>
         )}
 
         {isError && (
-          <div className="rounded-xl bg-rose-50 p-5 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+          <div
+            role="alert"
+            className="rounded-xl bg-rose-50 p-5 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+          >
             <p>
               {error instanceof Error
                 ? error.message
                 : "Unable to load tickets."}
             </p>
-            <button
+            <Button
+              variant="secondary"
+              className="mt-3"
               onClick={() => window.location.reload()}
-              className="mt-3 font-semibold underline"
             >
               Try Again
-            </button>
+            </Button>
           </div>
         )}
 
         {!isLoading && !isError && (
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             {isFetching && (
-              <p className="px-5 py-2 text-xs text-blue-600 dark:text-blue-400">
+              <p
+                role="status"
+                className="px-5 py-2 text-xs text-blue-600 dark:text-blue-400"
+              >
                 Updating tickets...
               </p>
             )}
 
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-800/80 dark:text-slate-300">
-                <tr>
-                  <th className="px-5 py-4">Ticket ID</th>
-                  <th className="px-5 py-4">Title</th>
-                  <th className="px-5 py-4">Category</th>
-                  <th className="px-5 py-4">Priority</th>
-                  <th className="px-5 py-4">Status</th>
-                  <th className="px-5 py-4">Created</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {tickets.map((ticket) => (
-                  <tr
-                    key={ticket.id}
-                    onClick={() => openTicket(ticket.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        openTicket(ticket.id);
-                      }
-                    }}
-                    role="link"
-                    tabIndex={0}
-                    className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                  >
-                    <td className="whitespace-nowrap px-5 py-4 font-semibold text-blue-700 dark:text-blue-400">
-                      #{ticket.id}
-                    </td>
-
-                    <td className="min-w-52 px-5 py-4 font-medium text-slate-800 dark:text-slate-100">
-                      {ticket.title}
-                      <p className="mt-1 max-w-sm truncate text-xs font-normal text-slate-500 dark:text-slate-400">
-                        {ticket.description}
-                      </p>
-                    </td>
-
-                    <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
-                      {ticket.category || "General"}
-                    </td>
-
-                    <td className="whitespace-nowrap px-5 py-4 font-semibold text-slate-700 dark:text-slate-200">
-                      {ticket.priority}
-                    </td>
-
-                    <td className="whitespace-nowrap px-5 py-4">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${statusColors[ticket.status]}`}
-                      >
-                        {ticket.status.replace(/_/g, " ")}
-                      </span>
-                    </td>
-
-                    <td className="whitespace-nowrap px-5 py-4 text-slate-500 dark:text-slate-400">
-                      {new Date(ticket.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-
-                {tickets.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-5 py-12 text-center text-slate-500 dark:text-slate-400"
-                    >
-                      No tickets found. Try changing your filters.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <Table
+              aria-label="Support tickets"
+              columns={columns}
+              data={tickets}
+              getRowKey={(ticket) => ticket.id}
+              getRowLabel={(ticket) =>
+                `Open ticket ${ticket.id}: ${ticket.title}`
+              }
+              onRowClick={(ticket) => openTicket(ticket.id)}
+              emptyMessage="No tickets found. Try changing your filters."
+            />
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-5 py-4 dark:border-slate-800">
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -203,25 +219,27 @@ function TicketsPage() {
               </p>
 
               <div className="flex gap-2">
-                <button
+                <Button
+                  variant="secondary"
                   disabled={page <= 1 || isFetching}
                   onClick={() => setPage((current) => current - 1)}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="px-4 py-2"
                 >
                   Previous
-                </button>
+                </Button>
 
-                <button
+                <Button
+                  variant="secondary"
                   disabled={
                     isFetching ||
                     !pagination ||
                     page >= pagination.totalPages
                   }
                   onClick={() => setPage((current) => current + 1)}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="px-4 py-2"
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
           </div>

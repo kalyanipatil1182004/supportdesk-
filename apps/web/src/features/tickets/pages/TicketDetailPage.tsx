@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useAuth } from "../../auth/context/AuthContext";
 import {
@@ -7,16 +8,17 @@ import {
   useUpdateTicketStatus,
 } from "../hooks/useTicketDetails";
 import AppLayout from "../../../components/AppLayout";
+import Modal from "../../../components/Modal";
+import Button from "../../../components/Button";
 import type { TicketStatus } from "../../../types/ticket";
 
 export default function TicketDetailPage() {
   const { user, token } = useAuth();
   const [comment, setComment] = useState("");
   const [status, setStatus] = useState<TicketStatus>("open");
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
 
-  const ticketId = Number(
-    window.location.hash.split("/")[1]
-  );
+  const ticketId = Number(window.location.hash.split("/")[1]);
 
   const ticketQuery = useTicketDetail(token, ticketId);
   const commentsQuery = useTicketComments(token, ticketId);
@@ -25,6 +27,7 @@ export default function TicketDetailPage() {
 
   const ticket = ticketQuery.data;
   const isAgent = user?.role === "agent" || user?.role === "admin";
+  const canAddComment = isAgent;
 
   useEffect(() => {
     if (ticket) {
@@ -75,6 +78,7 @@ export default function TicketDetailPage() {
   async function handleStatusUpdate() {
     try {
       await updateStatus.mutateAsync(status);
+      setIsStatusModalOpen(false);
     } catch {
       // Mutation error is displayed below.
     }
@@ -88,14 +92,15 @@ export default function TicketDetailPage() {
           onClick={() => (window.location.hash = "#tickets")}
           className="inline-flex items-center gap-2 rounded-lg text-sm font-semibold text-blue-700 transition hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
         >
-          <span aria-hidden="true">←</span> Back to Tickets
+          <span aria-hidden="true">←</span>
+          Back to Tickets
         </button>
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="border-b border-slate-100 bg-gradient-to-r from-blue-50 to-white px-6 py-6 dark:border-slate-800 dark:from-blue-950/30 dark:to-slate-900 sm:px-8">
+          <div className="border-b border-slate-100 p-6 dark:border-slate-800 sm:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700 dark:text-blue-400">
+                <p className="text-xs font-bold uppercase tracking-widest text-blue-700 dark:text-blue-400">
                   Ticket #{ticket.id}
                 </p>
                 <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -180,14 +185,13 @@ export default function TicketDetailPage() {
                 <option value="closed">Closed</option>
               </select>
 
-              <button
+              <Button
                 type="button"
-                onClick={handleStatusUpdate}
+                onClick={() => setIsStatusModalOpen(true)}
                 disabled={updateStatus.isPending || status === ticket.status}
-                className="min-h-11 rounded-xl bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-slate-900"
               >
-                {updateStatus.isPending ? "Updating..." : "Save status"}
-              </button>
+                Save status
+              </Button>
             </div>
 
             {updateStatus.isError && (
@@ -202,11 +206,14 @@ export default function TicketDetailPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5 dark:border-slate-800 sm:px-7">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700 dark:text-blue-400">
-                Conversation
+                Public conversation
               </p>
               <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
                 Comments
               </h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Agent updates are visible to the ticket customer and admins.
+              </p>
             </div>
             {commentsQuery.data && (
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
@@ -237,7 +244,7 @@ export default function TicketDetailPage() {
                     No comments yet
                   </p>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Start the conversation by leaving a message below.
+                    Agent updates will appear here when they are added.
                   </p>
                 </div>
               )}
@@ -252,56 +259,95 @@ export default function TicketDetailPage() {
                     {item.body}
                   </p>
                   <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                    User #{item.authorId} <span aria-hidden="true">·</span>{" "}
+                    User #{item.authorId}{" "}
+                    <span aria-hidden="true">·</span>{" "}
                     {new Date(item.createdAt).toLocaleString()}
                   </p>
                 </article>
               ))}
             </div>
 
-            <form
-              className="border-t border-slate-100 pt-5 dark:border-slate-800"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void handleCommentSubmit();
-              }}
-            >
-              <label
-                htmlFor="ticket-comment"
-                className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200"
+            {canAddComment ? (
+              <form
+                className="border-t border-slate-100 pt-5 dark:border-slate-800"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleCommentSubmit();
+                }}
               >
-                Add a comment
-              </label>
-              <textarea
-                id="ticket-comment"
-                value={comment}
-                onChange={(event) => setComment(event.target.value)}
-                placeholder="Share an update or ask a question..."
-                className="min-h-28 w-full resize-y rounded-xl border border-slate-300 bg-white p-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 dark:focus:ring-blue-950"
-                rows={4}
-              />
-
-              {addComment.isError && (
-                <p className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
-                  {addComment.error.message}
-                </p>
-              )}
-
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Keep your message clear and respectful.
-                </p>
-                <button
-                  type="submit"
-                  disabled={!comment.trim() || addComment.isPending}
-                  className="rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-slate-900"
+                <label
+                  htmlFor="ticket-comment"
+                  className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200"
                 >
-                  {addComment.isPending ? "Sending..." : "Send comment"}
-                </button>
-              </div>
-            </form>
+                  Add a comment
+                </label>
+                <textarea
+                  id="ticket-comment"
+                  value={comment}
+                  onChange={(event) => setComment(event.target.value)}
+                  placeholder="Share an update or ask a question..."
+                  className="min-h-28 w-full resize-y rounded-xl border border-slate-300 bg-white p-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 dark:focus:ring-blue-950"
+                  rows={4}
+                />
+
+                {addComment.isError && (
+                  <p className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                    {addComment.error.message}
+                  </p>
+                )}
+
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Keep your message clear and respectful.
+                  </p>
+                  <Button
+                    type="submit"
+                    disabled={!comment.trim() || addComment.isPending}
+                  >
+                    {addComment.isPending ? "Sending..." : "Send comment"}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <p className="border-t border-slate-100 pt-5 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                You can view this conversation but cannot add comments.
+              </p>
+            )}
           </div>
         </section>
+
+        <Modal
+          isOpen={isStatusModalOpen}
+          title="Confirm status update"
+          onClose={() => setIsStatusModalOpen(false)}
+        >
+          <div className="space-y-5">
+            <p>
+              Are you sure you want to change the ticket status to{" "}
+              <strong className="capitalize">
+                {status.replace(/_/g, " ")}
+              </strong>
+              ?
+            </p>
+
+            <div className="flex flex-wrap justify-end gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => setIsStatusModalOpen(false)}
+                disabled={updateStatus.isPending}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                onClick={() => void handleStatusUpdate()}
+                disabled={updateStatus.isPending}
+              >
+                {updateStatus.isPending ? "Updating..." : "Confirm Update"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </AppLayout>
   );
