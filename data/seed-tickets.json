@@ -1,0 +1,302 @@
+[
+  {
+    "id": "1",
+    "title": "Login issue",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "2",
+    "title": "Network issue",
+    "status": "In Progress",
+    "priority": "Medium"
+  },
+  {
+    "id": "3",
+    "title": "Password reset",
+    "status": "Open",
+    "priority": "Low"
+  },
+  {
+    "id": "4",
+    "title": "Email not working",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "5",
+    "title": "Website loading slowly",
+    "status": "In Progress",
+    "priority": "Medium"
+  },
+  {
+    "id": "6",
+    "title": "Account locked",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "7",
+    "title": "Profile update issue",
+    "status": "Resolved",
+    "priority": "Low"
+  },
+  {
+    "id": "8",
+    "title": "Payment page error",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "9",
+    "title": "Dashboard not loading",
+    "status": "In Progress",
+    "priority": "Medium"
+  },
+  {
+    "id": "10",
+    "title": "Unable to upload file",
+    "status": "Open",
+    "priority": "Medium"
+  },
+  {
+    "id": "11",
+    "title": "Incorrect user details",
+    "status": "Resolved",
+    "priority": "Low"
+  },
+  {
+    "id": "12",
+    "title": "Application crash",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "13",
+    "title": "Notification not received",
+    "status": "Open",
+    "priority": "Low"
+  },
+  {
+    "id": "14",
+    "title": "Search feature issue",
+    "status": "In Progress",
+    "priority": "Medium"
+  },
+  {
+    "id": "15",
+    "title": "Report download failed",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "16",
+    "title": "Session timeout",
+    "status": "Resolved",
+    "priority": "Medium"
+  },
+  {
+    "id": "17",
+    "title": "Mobile view problem",
+    "status": "Open",
+    "priority": "Low"
+  },
+  {
+    "id": "18",
+    "title": "Registration error",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "19",
+    "title": "Ticket status not updating",
+    "status": "In Progress",
+    "priority": "Medium"
+  },
+  {
+    "id": "20",
+    "title": "Attachment missing",
+    "status": "Open",
+    "priority": "Medium"
+  },
+  {
+    "id": "21",
+    "title": "Duplicate ticket created",
+    "status": "Resolved",
+    "priority": "Low"
+  },
+  {
+    "id": "22",
+    "title": "Admin panel error",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "23",
+    "title": "Slow database response",
+    "status": "In Progress",
+    "priority": "High"
+  },
+  {
+    "id": "24",
+    "title": "Unable to edit profile",
+    "status": "Open",
+    "priority": "Medium"
+  },
+  {
+    "id": "25",
+    "title": "Logout issue",
+    "status": "Resolved",
+    "priority": "Low"
+  },
+  {
+    "id": "26",
+    "title": "Access permission error",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "27",
+    "title": "Incorrect dashboard count",
+    "status": "In Progress",
+    "priority": "Medium"
+  },
+  {
+    "id": "28",
+    "title": "File preview not working",
+    "status": "Open",
+    "priority": "Low"
+  },
+  {
+    "id": "29",
+    "title": "Comment not saving",
+    "status": "Open",
+    "priority": "Medium"
+  },
+  {
+    "id": "30",
+    "title": "Email verification issue",
+    "status": "Resolved",
+    "priority": "Low"
+  },
+  {
+    "id": "31",
+    "title": "API response error",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "32",
+    "title": "Page not found",
+    "status": "Open",
+    "priority": "Medium"
+  },
+  {
+    "id": "33",
+    "title": "User role not updating",
+    "status": "In Progress",
+    "priority": "High"
+  },
+  {
+    "id": "34",
+    "title": "Password validation error",
+    "status": "Open",
+    "priority": "Medium"
+  },
+  {
+    "id": "35",
+    "title": "Session expired unexpectedly",
+    "status": "Resolved",
+    "priority": "Low"
+  },
+  {
+    "id": "36",
+    "title": "Data export issue",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "37",
+    "title": "Chat support unavailable",
+    "status": "Open",
+    "priority": "Medium"
+  },
+  {
+    "id": "38",
+    "title": "Image upload problem",
+    "status": "In Progress",
+    "priority": "Low"
+  },
+  {
+    "id": "39",
+    "title": "Ticket assignment error",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "40",
+    "title": "Missing customer information",
+    "status": "Resolved",
+    "priority": "Low"
+  },
+  {
+    "id": "41",
+    "title": "Application response delay",
+    "status": "Open",
+    "priority": "Medium"
+  },
+  {
+    "id": "42",
+    "title": "Invalid search results",
+    "status": "In Progress",
+    "priority": "Low"
+  },
+  {
+    "id": "43",
+    "title": "Database connection error",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "44",
+    "title": "Duplicate email warning",
+    "status": "Resolved",
+    "priority": "Medium"
+  },
+  {
+    "id": "45",
+    "title": "Settings page not saving",
+    "status": "Open",
+    "priority": "Medium"
+  },
+  {
+    "id": "46",
+    "title": "Two factor login issue",
+    "status": "Open",
+    "priority": "High"
+  },
+  {
+    "id": "47",
+    "title": "Report formatting problem",
+    "status": "In Progress",
+    "priority": "Low"
+  },
+  {
+    "id": "48",
+    "title": "User account deactivation",
+    "status": "Open",
+    "priority": "Medium"
+  },
+  {
+    "id": "49",
+    "title": "Support notification delay",
+    "status": "Resolved",
+    "priority": "Low"
+  },
+  {
+    "id": "50",
+    "title": "Ticket history not visible",
+    "status": "Open",
+    "priority": "High"
+  }
+]
