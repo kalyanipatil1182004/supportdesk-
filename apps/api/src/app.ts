@@ -11,6 +11,7 @@ import { requestLogger } from "./middlewares/request-logger";
 import { errorHandler } from "./middlewares/error-handler";
 import authRoutes from "./routes/auth.routes";
 import ticketsRoutes from "./routes/tickets.routes";
+import aiRoutes from "./routes/ai.routes";
 
 const app = express();
 const openApiSpec = parse(
@@ -54,6 +55,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/tickets", ticketsRoutes);
+app.use("/ai", aiRoutes);
 
 app.use(errorHandler);
 
