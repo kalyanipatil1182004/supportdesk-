@@ -1,0 +1,625 @@
+openapi: 3.0.3
+info:
+  title: SupportDesk API
+  version: 1.0.0
+  description: OpenAPI specification for the existing SupportDesk API.
+servers:
+  - url: /
+    description: Current host
+paths:
+  /health:
+    get:
+      summary: Check API health
+      security: []
+      responses:
+        "200":
+          description: API is healthy.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                            enum: [OK]
+                        required: [status]
+
+  /auth/register:
+    post:
+      summary: Register a customer account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Account created.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: "#/components/schemas/PublicUser"
+                        required: [user]
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          description: An account with this email already exists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /auth/login:
+    post:
+      summary: Log in
+      description: Login is rate limited to five attempts per 15-minute window.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login succeeded.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: "#/components/schemas/PublicUser"
+                          token:
+                            type: string
+                        required: [user, token]
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          description: Email or password is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "429":
+          description: Too many login attempts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /tickets:
+    get:
+      summary: List tickets
+      description: Customers see their own created tickets; agents and admins see all tickets.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/TicketStatus"
+        - name: priority
+          in: query
+          schema:
+            $ref: "#/components/schemas/TicketPriority"
+        - name: assigneeId
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: search
+          in: query
+          description: Case-insensitive substring search in title, description, and category.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [id, title, status, priority, createdAt, updatedAt]
+            default: createdAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        "200":
+          description: Paginated ticket list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Ticket"
+                      meta:
+                        type: object
+                        properties:
+                          pagination:
+                            $ref: "#/components/schemas/Pagination"
+                        required: [pagination]
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/AuthenticationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      summary: Create a ticket
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTicketRequest"
+      responses:
+        "201":
+          description: Ticket created.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Ticket"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/AuthenticationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /tickets/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      summary: Get a ticket
+      description: Customers can retrieve their own created tickets; agents and admins can retrieve any ticket.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Ticket details.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Ticket"
+        "400":
+          description: Invalid ticket ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          $ref: "#/components/responses/AuthenticationError"
+        "404":
+          $ref: "#/components/responses/TicketNotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    patch:
+      summary: Update a ticket
+      description: Customers can update their own created tickets; agents and admins can update any ticket.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTicketRequest"
+      responses:
+        "200":
+          description: Ticket updated.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Ticket"
+        "400":
+          description: Invalid ticket ID or ticket data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          $ref: "#/components/responses/AuthenticationError"
+        "404":
+          $ref: "#/components/responses/TicketNotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /tickets/{ticketId}/comments:
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      summary: List public comments for a ticket
+      description: Returns only comments where isInternal is false, after applying the existing ticket access check.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Public ticket comments.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Comment"
+        "400":
+          description: Invalid ticket ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          $ref: "#/components/responses/AuthenticationError"
+        "404":
+          $ref: "#/components/responses/TicketNotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      summary: Create a public comment on a ticket
+      description: The authenticated user is recorded as author; isInternal uses the schema default false.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommentRequest"
+      responses:
+        "201":
+          description: Comment created.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Comment"
+        "400":
+          description: Invalid ticket ID or comment data.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ErrorEnvelope"
+                  - $ref: "#/components/schemas/ValidationErrorEnvelope"
+        "401":
+          $ref: "#/components/responses/AuthenticationError"
+        "404":
+          $ref: "#/components/responses/TicketNotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SuccessEnvelope:
+      type: object
+      properties:
+        data: {}
+        error:
+          type: object
+          nullable: true
+        meta:
+          type: object
+      required: [data, error, meta]
+    ErrorEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          nullable: true
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+          required: [message]
+        meta:
+          type: object
+      required: [data, error, meta]
+    ValidationErrorEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          nullable: true
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+          required: [message]
+        meta:
+          type: object
+          properties:
+            issues:
+              type: array
+              items:
+                type: object
+                properties:
+                  path:
+                    type: array
+                    items: {}
+                  message:
+                    type: string
+                required: [path, message]
+          required: [issues]
+      required: [data, error, meta]
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          description: Maximum length is 72 UTF-8 bytes.
+      required: [name, email, password]
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+      required: [email, password]
+    PublicUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [customer, agent, admin]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, email, role, createdAt, updatedAt]
+    TicketStatus:
+      type: string
+      enum: [open, in_progress, waiting_on_customer, resolved, closed]
+    TicketPriority:
+      type: string
+      enum: [P1, P2, P3, P4]
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: integer
+        seedId:
+          type: string
+          nullable: true
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        priority:
+          $ref: "#/components/schemas/TicketPriority"
+        category:
+          type: string
+          nullable: true
+        slaDueTime:
+          type: string
+          format: date-time
+          nullable: true
+        creatorId:
+          type: integer
+        assigneeId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - seedId
+        - title
+        - description
+        - status
+        - priority
+        - category
+        - slaDueTime
+        - creatorId
+        - assigneeId
+        - createdAt
+        - updatedAt
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+        body:
+          type: string
+        isInternal:
+          type: boolean
+        ticketId:
+          type: integer
+        authorId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, body, isInternal, ticketId, authorId, createdAt]
+    CreateTicketRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 150
+        description:
+          type: string
+          minLength: 5
+          maxLength: 2000
+        priority:
+          $ref: "#/components/schemas/TicketPriority"
+        category:
+          type: string
+      required: [title, description, priority]
+    UpdateTicketRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 150
+        description:
+          type: string
+          minLength: 5
+          maxLength: 2000
+        priority:
+          $ref: "#/components/schemas/TicketPriority"
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        category:
+          type: string
+          nullable: true
+      minProperties: 1
+    CreateCommentRequest:
+      type: object
+      properties:
+        body:
+          type: string
+          minLength: 1
+      required: [body]
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required: [page, limit, total, totalPages]
+  responses:
+    ValidationError:
+      description: Request validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationErrorEnvelope"
+    AuthenticationError:
+      description: Authentication is required or the bearer token is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    TicketNotFound:
+      description: Ticket not found or inaccessible under the existing customer ownership check.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    InternalError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"

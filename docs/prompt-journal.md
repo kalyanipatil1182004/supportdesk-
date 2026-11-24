@@ -42,3 +42,69 @@ Help debug my TypeScript CLI using this structure: (1) expected behavior, (2) ac
 **Verification and actual outcome:** The ticket tests failed (3 failed, 3 passed) with the incorrect date format `TKT-2026012-001`. After fixing the padding, all 14 tests passed across 2 test suites.
 
 **Next time:** I will record the failing test output, isolate the root cause, make the smallest fix, and rerun the complete test suite before committing.
+# Day 13 — Frontend Foundations with AI
+
+## 5. Frontend Architecture Prompt
+
+**Goal:** Build the frontend foundation for the existing SupportDesk application.
+
+**Prompt:**
+Review the existing SupportDesk backend and repository structure before implementing the frontend. Build the frontend using React, Vite, TypeScript and Tailwind CSS. Use a shared API client configured through environment variables, authentication context, a protected dashboard, and a responsive login page. Do not create a new repository or overwrite existing backend functionality.
+
+**Verification / Outcome:** Verify the frontend build, inspect the structure, and confirm the API integration matches the existing backend.
+
+## 6. Backend Integration Prompt
+
+**Goal:** Integrate the login frontend with the existing backend API.
+
+**Prompt:**
+Inspect the existing authentication API, validation rules, response envelope, and error handling before integrating login. Use the existing API endpoint and response structure. Do not invent backend endpoints or change backend authentication behavior.
+
+**Verification / Outcome:** Verify API connectivity, validation, login errors, and authentication state.
+
+## 7. AI Code Review Prompt
+
+**Goal:** Review frontend code for maintainability, security, and functionality.
+
+**Prompt:**
+Review my SupportDesk frontend code for architecture, TypeScript correctness, API error handling, authentication state, responsive layout, accessibility, and missing tests. Identify issues with evidence and suggest the smallest safe fixes. Do not rewrite the entire application or modify unrelated backend code.
+
+**Verification / Outcome:** Review findings, apply relevant fixes, and rerun the frontend build and manual tests.
+
+# Day 16 - AI Features Inside SupportDesk
+
+## 8. Plan-First AI Feature Prompt
+
+**Goal:** Add Suggest Reply and ticket categorisation to the existing SupportDesk application.
+
+**Prompt:**
+Inspect the existing SupportDesk architecture before implementing AI features. Plan backend-only AI services for suggested reply drafts and structured ticket categorisation. Keep provider logic separate from controllers, use versioned prompt templates, validate structured output with Zod, and preserve existing authentication and authorization. Do not auto-send replies or save unvalidated AI output.
+
+**Verification / Outcome:** Implemented a local Mock AI provider, AI service, Zod schema, controller, and protected routes. The current implementation does not call a real AI provider.
+
+## 9. AI Security and Cost-Safety Prompt
+
+**Goal:** Prevent accidental API key exposure and unexpected API costs.
+
+**Prompt:**
+Review the AI integration for secret handling, frontend exposure, unauthorized access, accidental database writes, and fabricated token usage. Keep API credentials out of frontend code, browser requests, logs, and Git. Do not make paid API calls without explicit approval.
+
+**Verification / Outcome:** Used MockAiProvider only. No real OpenAI API requests or API key usage. No token usage or cost data is available from the mock provider; therefore usage and cost are recorded as not applicable.
+
+## 10. AI Test-First Prompt
+
+**Goal:** Verify AI service behavior and API access.
+
+**Prompt:**
+Create tests for suggested reply generation, provider failures, valid and invalid category/priority output, missing fields, and role-based API access. Use a local mock provider and isolated integration test database. Do not make paid API calls or expose credentials.
+
+**Verification / Outcome:** AI service tests and integration tests passed. Integration tests verified Agent access to Suggest Reply and categorisation, and Customer access rejection.
+
+## 11. AI Implementation Review
+
+**Goal:** Review the implementation and document limitations honestly.
+
+**Prompt:**
+Review the AI feature implementation for validation, authorization, draft-only behavior, streaming behavior, error handling, and test coverage. Clearly distinguish mock behavior from real model behavior. Identify missing functionality without claiming it is complete.
+
+**Verification / Outcome:** The current mock generates a deterministic reply and splits it into chunks. Categorisation uses keyword rules and returns P3. Versioned prompt files exist but are not yet connected to the mock provider. Real OpenAI integration, provider usage logging, and actual model streaming remain pending approval and implementation.
