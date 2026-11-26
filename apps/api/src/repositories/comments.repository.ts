@@ -12,7 +12,10 @@ const commentSelect = {
 export const commentsRepository = {
   create(data: { body: string; ticketId: number; authorId: number }) {
     return prisma.comment.create({
-      data,
+      data: {
+        ...data,
+        isInternal: false,
+      },
       select: commentSelect,
     });
   },

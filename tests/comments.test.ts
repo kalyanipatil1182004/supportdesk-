@@ -53,40 +53,101 @@ describe("comments endpoints", () => {
     });
   });
 
-  test("service checks ticket access before listing comments", async () => {
-    findTicketMock.mockResolvedValue({ id: 15 } as never);
-    findPublicMock.mockResolvedValue([]);
-
-    await commentsService.listForTicket(15, 7, "customer");
-
-    expect(findTicketMock).toHaveBeenCalledWith(15, 7, "customer");
-    expect(findPublicMock).toHaveBeenCalledWith(15);
-  });
-
-  test("service assigns the authenticated user as author when creating a comment", async () => {
-    findTicketMock.mockResolvedValue({ id: 15 } as never);
-    repositoryCreateMock.mockResolvedValue({
+  test("repository creates comments as public updates", async () => {
+    const comment = {
       id: 2,
-      body: "Following up",
+      body: "Agent update",
       isInternal: false,
       ticketId: 15,
-      authorId: 7,
+      authorId: 9,
       createdAt: new Date(),
-    });
+    };
+    createMock.mockResolvedValue(comment);
 
-    await commentsService.createForTicket(
-      15,
-      7,
-      "customer",
-      { body: "Following up" }
-    );
-
-    expect(findTicketMock).toHaveBeenCalledWith(15, 7, "customer");
-    expect(repositoryCreateMock).toHaveBeenCalledWith({
-      body: "Following up",
+    await commentsRepository.create({
+      body: "Agent update",
       ticketId: 15,
-      authorId: 7,
+      authorId: 9,
     });
+
+    expect(createMock).toHaveBeenCalledWith({
+      data: {
+        body: "Agent update",
+        ticketId: 15,
+        authorId: 9,
+        isInternal: false,
+      },
+      select: {
+        id: true,
+        body: true,
+        isInternal: true,
+        ticketId: true,
+        authorId: true,
+        createdAt: true,
+      },
+    });
+  });
+
+  test.each(["customer", "admin"] as const)(
+    "service allows %s to view public ticket comments",
+    async (role) => {
+      const comments = [{ id: 2, isInternal: false }];
+      findTicketMock.mockResolvedValue({ id: 15 } as never);
+      findPublicMock.mockResolvedValue(comments as never);
+
+      await expect(
+        commentsService.listForTicket(15, 7, role)
+      ).resolves.toBe(comments);
+
+      expect(findTicketMock).toHaveBeenCalledWith(15, 7, role);
+      expect(findPublicMock).toHaveBeenCalledWith(15);
+    }
+  );
+
+  test.each(["agent", "admin"] as const)(
+    "service allows %s comments and assigns the authenticated user as author",
+    async (role) => {
+      findTicketMock.mockResolvedValue({ id: 15 } as never);
+      repositoryCreateMock.mockResolvedValue({
+        id: 2,
+        body: "Following up",
+        isInternal: false,
+        ticketId: 15,
+        authorId: 7,
+        createdAt: new Date(),
+      });
+
+      await commentsService.createForTicket(
+        15,
+        7,
+        role,
+        { body: "Following up" }
+      );
+
+      expect(findTicketMock).toHaveBeenCalledWith(15, 7, role);
+      expect(repositoryCreateMock).toHaveBeenCalledWith({
+        body: "Following up",
+        ticketId: 15,
+        authorId: 7,
+      });
+    }
+  );
+
+  test("service rejects customer comment creation", async () => {
+    await expect(
+      commentsService.createForTicket(
+        15,
+        7,
+        "customer",
+        { body: "Following up" }
+      )
+    ).rejects.toMatchObject({
+      message: "Only agents and admins can add comments",
+      statusCode: 403,
+    });
+
+    expect(findTicketMock).not.toHaveBeenCalled();
+    expect(repositoryCreateMock).not.toHaveBeenCalled();
   });
 
   test("service does not read comments when ticket access is denied", async () => {
@@ -106,7 +167,7 @@ describe("comments endpoints", () => {
       commentsService.createForTicket(
         15,
         7,
-        "customer",
+        "agent",
         { body: "Following up" }
       )
     ).rejects.toThrow("Ticket not found");
@@ -130,7 +191,7 @@ describe("comments endpoints", () => {
       commentsService.createForTicket(
         15,
         7,
-        "customer",
+        "agent",
         { body: "Following up" }
       )
     ).rejects.toBe(error);
@@ -173,7 +234,7 @@ describe("comments endpoints", () => {
     const req = {
       params: { ticketId: "15" },
       body: { body: "  Following up  ", isInternal: true },
-      user: { id: 7, role: "customer" },
+      user: { id: 7, role: "agent" },
     } as unknown as Request;
     const res = createMockResponse();
 
@@ -182,7 +243,7 @@ describe("comments endpoints", () => {
     expect(createServiceMock).toHaveBeenCalledWith(
       15,
       7,
-      "customer",
+      "agent",
       { body: "Following up" }
     );
     expect(res.status).toHaveBeenCalledWith(201);

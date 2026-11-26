@@ -72,4 +72,33 @@ describe("requireRole middleware", () => {
     expect(next).toHaveBeenCalledTimes(1);
     expect(res.status).not.toHaveBeenCalled();
   });
+
+  test.each(["agent", "admin"] as const)(
+    "allows %s to access staff-only account directories",
+    (role) => {
+      const req = {
+        user: { id: 1, role },
+      } as unknown as Request;
+      const res = mockResponse();
+      const next = jest.fn() as NextFunction;
+
+      requireRole("agent", "admin")(req, res as unknown as Response, next);
+
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(res.status).not.toHaveBeenCalled();
+    }
+  );
+
+  test("denies customers from staff-only account directories", () => {
+    const req = {
+      user: { id: 1, role: "customer" },
+    } as unknown as Request;
+    const res = mockResponse();
+    const next = jest.fn() as NextFunction;
+
+    requireRole("agent", "admin")(req, res as unknown as Response, next);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(next).not.toHaveBeenCalled();
+  });
 });

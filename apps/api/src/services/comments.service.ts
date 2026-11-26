@@ -18,6 +18,12 @@ export const commentsService = {
     role: UserRole,
     data: CreateCommentInput
   ) {
+    if (role === "customer") {
+      throw Object.assign(new Error("Only agents and admins can add comments"), {
+        statusCode: 403,
+      });
+    }
+
     await ticketsService.findById(ticketId, userId, role);
     return commentsRepository.create({
       ...data,

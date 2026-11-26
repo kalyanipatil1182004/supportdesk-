@@ -14,6 +14,10 @@ router.get("/:id", ticketsController.getById);
 router.post("/", ticketsController.create);
 router.patch("/:id", ticketsController.update);
 router.get("/:ticketId/comments", commentsController.list);
-router.post("/:ticketId/comments", commentsController.create);
+router.post(
+  "/:ticketId/comments",
+  requireRole("agent", "admin"),
+  commentsController.create
+);
 
 export default router;
