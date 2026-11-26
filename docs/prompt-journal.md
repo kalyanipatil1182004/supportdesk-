@@ -42,7 +42,7 @@ Help debug my TypeScript CLI using this structure: (1) expected behavior, (2) ac
 **Verification and actual outcome:** The ticket tests failed (3 failed, 3 passed) with the incorrect date format `TKT-2026012-001`. After fixing the padding, all 14 tests passed across 2 test suites.
 
 **Next time:** I will record the failing test output, isolate the root cause, make the smallest fix, and rerun the complete test suite before committing.
-# Day 13 — Frontend Foundations with AI
+# Day 13 ï¿½ Frontend Foundations with AI
 
 ## 5. Frontend Architecture Prompt
 
@@ -108,3 +108,62 @@ Create tests for suggested reply generation, provider failures, valid and invali
 Review the AI feature implementation for validation, authorization, draft-only behavior, streaming behavior, error handling, and test coverage. Clearly distinguish mock behavior from real model behavior. Identify missing functionality without claiming it is complete.
 
 **Verification / Outcome:** The current mock generates a deterministic reply and splits it into chunks. Categorisation uses keyword rules and returns P3. Versioned prompt files exist but are not yet connected to the mock provider. Real OpenAI integration, provider usage logging, and actual model streaming remain pending approval and implementation.
+
+
+# Day 17 ï¿½ Prompt Journal
+
+## Project
+SupportDesk ï¿½ AI Guardrails
+
+## Objective
+Improve AI feature safety, input protection, output validation and failure handling.
+
+## Work Completed
+
+### 1. Input Protection
+- Added input length validation for ticket title, description and comments.
+- Added prompt injection detection.
+- Separated trusted system instructions from untrusted ticket content.
+- Added tests for malicious inputs.
+
+### 2. PII Masking
+- Added masking for sensitive information before sending input to AI providers.
+- Added tests for PII masking.
+
+### 3. Output Validation
+- Added strict Zod schemas for AI categorisation and suggested replies.
+- Invalid or unexpected AI output is rejected.
+
+### 4. Moderation
+- Added moderation checks before AI processing.
+- Added tests for moderation behavior.
+
+### 5. Rate Limiting
+- Added per-user rate limiting to AI endpoints.
+- Added rate-limit tests.
+
+### 6. Timeout and Safe Fallback
+- Added AI request timeout handling.
+- Added safe fallback message:
+  AI unavailable ï¿½ reply manually.
+- Added provider failure and interrupted response handling.
+
+## Testing
+- Backend unit tests: 22 suites, 203 tests passed.
+- Backend TypeScript check: Passed.
+- Frontend TypeScript check: Passed.
+- Prompt injection tests: 10/10 passed.
+- Combined input protection tests: 25/25 passed.
+
+## Evaluation
+- Dataset: 20 synthetic tickets.
+- Category accuracy: 100%.
+- Priority accuracy: 100% (20/20) on synthetic MockAiProvider evaluation.
+- Official lead-provided dataset: Pending.
+- Synthetic evaluation is only a preliminary smoke check, not official model accuracy.
+
+## Important Notes
+- No API keys or secrets should be included in prompts or reports.
+- AI output must be validated before use.
+- AI must not perform privileged actions automatically.
+- Official evaluation must be repeated using the lead-provided dataset.

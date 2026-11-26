@@ -1,14 +1,29 @@
 
 import { GoogleGenAI } from "@google/genai";
+import {
+  AiOutputValidationError,
+  validateCategorisationOutput,
+  validateSuggestedReplyOutput,
+  type ValidatedTicketAiSuggestion,
+} from "./ai.schemas";
 import type {
   AiProvider,
   TicketAiInput,
 } from "./mock-ai.provider";
+import {
+  buildCategorisePrompt,
+  buildSuggestReplyPrompt,
+} from "./prompt-guard";
 
 export class GeminiAiProvider implements AiProvider {
   private readonly ai: GoogleGenAI;
 
-  constructor() {
+  constructor(client?: GoogleGenAI) {
+    if (client) {
+      this.ai = client;
+      return;
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -18,55 +33,55 @@ export class GeminiAiProvider implements AiProvider {
     this.ai = new GoogleGenAI({ apiKey });
   }
 
-  async suggestReply(input: TicketAiInput): Promise<string> {
+  async suggestReply(
+    input: TicketAiInput,
+    signal?: AbortSignal
+  ): Promise<string> {
+    const prompt = buildSuggestReplyPrompt(input);
     const response = await this.ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `You are a professional customer support agent.
-
-Create a short, polite and helpful reply for this ticket.
-
-Title: ${input.title}
-Description: ${input.description}
-
-Return only the customer-facing reply.`,
+      contents: prompt.userPrompt,
+      config: {
+        systemInstruction: prompt.systemInstruction,
+        ...(signal ? { abortSignal: signal } : {}),
+      },
     });
 
-    const reply = response.text?.trim();
-
-    if (!reply) {
-      throw new Error("Gemini returned an empty reply");
-    }
-
-    return reply;
+    return validateSuggestedReplyOutput(response.text);
   }
 
-  async categorise(input: TicketAiInput): Promise<unknown> {
+  async categorise(
+    input: TicketAiInput,
+    signal?: AbortSignal
+  ): Promise<ValidatedTicketAiSuggestion> {
+    const prompt = buildCategorisePrompt(input);
     const response = await this.ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Analyse this support ticket.
-
-Title: ${input.title}
-Description: ${input.description}
-
-Choose exactly one category:
-General, Technical, Account, Network, Billing.
-
-Choose exactly one priority:
-P1, P2, P3, P4.
-
-Return only valid JSON in this format:
-{"category":"Network","priority":"P3"}`,
+      contents: prompt.userPrompt,
       config: {
+        systemInstruction: prompt.systemInstruction,
         responseMimeType: "application/json",
+        ...(signal ? { abortSignal: signal } : {}),
       },
     });
 
     const result = response.text?.trim();
 
     if (!result) {
-      throw new Error("Gemini returned an empty categorisation");
+      throw new AiOutputValidationError(
+        "Gemini returned an empty categorisation"
+      );
     }
 
-    return JSON.parse(result);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(result);
+    } catch {
+      throw new AiOutputValidationError(
+        "Gemini returned malformed JSON categorisation"
+      );
+    }
+
+    return validateCategorisationOutput(parsed);
   }
 }

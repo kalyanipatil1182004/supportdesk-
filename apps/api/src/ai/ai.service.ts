@@ -1,58 +1,122 @@
-﻿
 import {
   MockAiProvider,
   type AiProvider,
   type TicketAiInput,
 } from "./mock-ai.provider";
 import { GeminiAiProvider } from "./gemini-ai.provider";
-import { ticketAiSuggestionSchema } from "./ai.schemas";
+import {
+  AiTimeoutError,
+  resolveAiTimeoutMs,
+  validateCategorisationOutput,
+  validateSuggestedReplyOutput,
+  type ValidatedTicketAiSuggestion,
+} from "./ai.schemas";
+import { maskAiInputPii } from "./pii-masker";
+import { enforceAiModeration } from "./moderation";
+import { validateAndGuardAiInput } from "./prompt-guard";
+
+export interface AiServiceOptions {
+  timeoutMs?: number;
+  fallbackProvider?: AiProvider;
+}
 
 export class AiService {
   private readonly mockProvider = new MockAiProvider();
-  private provider: AiProvider;
-  private activeProvider: "gemini" | "mock";
+  private readonly provider: AiProvider;
+  private readonly activeProvider: "gemini" | "mock";
+  private readonly fallbackProvider?: AiProvider;
+  private readonly timeoutMs: number;
 
-  constructor(provider?: AiProvider) {
-  if (provider) {
-    this.provider = provider;
-    this.activeProvider = "mock";
-  } else if (process.env.GEMINI_API_KEY?.trim()) {
-    this.provider = new GeminiAiProvider();
-    this.activeProvider = "gemini";
-  } else {
-    this.provider = this.mockProvider;
-    this.activeProvider = "mock";
+  constructor(provider?: AiProvider, options: AiServiceOptions = {}) {
+    this.timeoutMs = resolveAiTimeoutMs(options.timeoutMs);
+
+    if (provider) {
+      this.provider = provider;
+      this.activeProvider = "mock";
+      this.fallbackProvider = options.fallbackProvider;
+    } else if (process.env.GEMINI_API_KEY?.trim()) {
+      this.provider = new GeminiAiProvider();
+      this.activeProvider = "gemini";
+      this.fallbackProvider = options.fallbackProvider ?? this.mockProvider;
+    } else {
+      this.provider = this.mockProvider;
+      this.activeProvider = "mock";
+      this.fallbackProvider = options.fallbackProvider;
+    }
   }
-}
 
   get providerName() {
     return this.activeProvider;
   }
 
-  private async withFallback<T>(
-    operation: (provider: AiProvider) => Promise<T>
+  private async executeWithTimeout<T>(
+    operation: (provider: AiProvider, signal: AbortSignal) => Promise<T>,
+    provider: AiProvider
   ): Promise<T> {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const timeoutPromise = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => {
+        controller.abort();
+        reject(new AiTimeoutError());
+      }, this.timeoutMs);
+      if (typeof timer === "object" && timer !== null && "unref" in timer) {
+        (timer as { unref: () => void }).unref();
+      }
+    });
+
     try {
-      return await operation(this.provider);
+      return await Promise.race([
+        operation(provider, controller.signal),
+        timeoutPromise,
+      ]);
+    } finally {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+      }
+    }
+  }
+
+  private async withFallback<T>(
+    operation: (provider: AiProvider, signal: AbortSignal) => Promise<T>
+  ): Promise<{ result: T; providerUsed: "gemini" | "mock" }> {
+    try {
+      const result = await this.executeWithTimeout(operation, this.provider);
+      return { result, providerUsed: this.activeProvider };
     } catch (error) {
-      if (this.activeProvider !== "gemini") {
+      if (!this.fallbackProvider || this.fallbackProvider === this.provider) {
         throw error;
       }
 
-      console.error("Gemini request failed. Switching to Mock AI.");
+      const errorType = error instanceof Error ? error.name : "UnknownError";
+      console.error(
+        `Primary AI provider failed (${errorType}). Using request-scoped fallback provider.`
+      );
 
-      this.provider = this.mockProvider;
-      this.activeProvider = "mock";
-
-      return operation(this.provider);
+      const result = await this.executeWithTimeout(
+        operation,
+        this.fallbackProvider
+      );
+      return { result, providerUsed: "mock" };
     }
   }
 
   async *streamSuggestedReply(
     input: TicketAiInput
   ): AsyncGenerator<string> {
-    const draft = await this.withFallback(
-      (provider) => provider.suggestReply(input)
+    const validatedInput = validateAndGuardAiInput(input);
+    enforceAiModeration(validatedInput);
+    const guardedInput = maskAiInputPii(validatedInput);
+
+    const { result: draft } = await this.withFallback(
+      async (provider, signal) => {
+        const reply =
+          provider.suggestReply.length >= 2
+            ? await provider.suggestReply(guardedInput, signal)
+            : await provider.suggestReply(guardedInput);
+        return validateSuggestedReplyOutput(reply);
+      }
     );
 
     const chunks = draft.match(/\S+\s*/g) ?? [];
@@ -62,10 +126,31 @@ export class AiService {
     }
   }
 
-  async categoriseTicket(input: TicketAiInput) {
-    return this.withFallback(async (provider) => {
-      const result = await provider.categorise(input);
-      return ticketAiSuggestionSchema.parse(result);
-    });
+  async categoriseTicketWithMeta(input: TicketAiInput): Promise<{
+    suggestion: ValidatedTicketAiSuggestion;
+    provider: "gemini" | "mock";
+  }> {
+    const validatedInput = validateAndGuardAiInput(input);
+    enforceAiModeration(validatedInput);
+    const guardedInput = maskAiInputPii(validatedInput);
+
+    const { result: suggestion, providerUsed } = await this.withFallback(
+      async (provider, signal) => {
+        const result =
+          provider.categorise.length >= 2
+            ? await provider.categorise(guardedInput, signal)
+            : await provider.categorise(guardedInput);
+        return validateCategorisationOutput(result);
+      }
+    );
+
+    return { suggestion, provider: providerUsed };
+  }
+
+  async categoriseTicket(
+    input: TicketAiInput
+  ): Promise<ValidatedTicketAiSuggestion> {
+    const { suggestion } = await this.categoriseTicketWithMeta(input);
+    return suggestion;
   }
 }

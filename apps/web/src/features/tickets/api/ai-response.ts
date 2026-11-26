@@ -1,5 +1,7 @@
 import type { TicketPriority } from "../../../types/ticket";
 
+export const AI_UNAVAILABLE_MESSAGE = "AI unavailable — reply manually.";
+
 export interface TicketAiSuggestion {
   category: "General" | "Technical" | "Account" | "Network" | "Billing";
   priority: TicketPriority;
@@ -21,15 +23,29 @@ function isTicketPriority(value: unknown): value is TicketPriority {
 
 export function formatAiErrorMessage(error: unknown): string {
   if (error instanceof Error && "status" in error) {
-    if (error.status === 401) {
+    const status = (error as { status?: unknown }).status;
+
+    if (status === 401) {
       return "Your session has expired. Please sign in again.";
     }
-    if (error.status === 403) {
+    if (status === 403) {
       return "You do not have permission to use AI assistance.";
+    }
+    if (typeof status === "number" && status >= 500) {
+      return AI_UNAVAILABLE_MESSAGE;
     }
   }
 
-  return error instanceof Error ? error.message : "AI assistance failed.";
+  if (
+    error instanceof TypeError ||
+    (error instanceof Error &&
+      (error.message === "The AI service returned an empty reply." ||
+        error.message === "AI reply stream was interrupted."))
+  ) {
+    return AI_UNAVAILABLE_MESSAGE;
+  }
+
+  return error instanceof Error ? error.message : AI_UNAVAILABLE_MESSAGE;
 }
 
 export function parseTicketAiSuggestion(value: unknown): TicketAiSuggestion {
@@ -107,9 +123,11 @@ export async function* streamTextResponse(
       fullText += finalChunk;
       yield finalChunk;
     }
+  } catch {
+    throw new Error("AI reply stream was interrupted.");
   } finally {
     if (!complete) {
-      await reader.cancel();
+      await reader.cancel().catch(() => undefined);
     }
     reader.releaseLock();
   }

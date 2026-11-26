@@ -1,4 +1,13 @@
-﻿import type { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
+import {
+  AI_MAX_COMMENT_LENGTH,
+  AI_MAX_COMMENTS_COUNT,
+  AiInputValidationError,
+  AiOutputValidationError,
+  AiTimeoutError,
+  AiUnavailableError,
+} from "../ai/ai.schemas";
+import { AiModerationError } from "../ai/moderation";
 import { AiService } from "../ai/ai.service";
 import { commentsService } from "../services/comments.service";
 import { ticketsService } from "../services/tickets.service";
@@ -18,6 +27,29 @@ function getTicketId(req: Request, res: Response): number | null {
   }
 
   return id;
+}
+
+function toSafeControllerError(error: unknown): unknown {
+  if (
+    error instanceof AiInputValidationError ||
+    error instanceof AiModerationError ||
+    error instanceof AiOutputValidationError ||
+    error instanceof AiTimeoutError ||
+    error instanceof AiUnavailableError
+  ) {
+    return error;
+  }
+
+  if (
+    error instanceof Error &&
+    "statusCode" in error &&
+    typeof (error as { statusCode?: unknown }).statusCode === "number" &&
+    (error as { statusCode: number }).statusCode < 500
+  ) {
+    return error;
+  }
+
+  return new AiUnavailableError();
 }
 
 export const aiController = {
@@ -40,18 +72,14 @@ export const aiController = {
       );
 
       const recentComments = comments
-        .slice(-5)
-        .map((comment) => comment.body)
-        .join("\n");
+        .slice(-AI_MAX_COMMENTS_COUNT)
+        .map((comment) => comment.body.trim().slice(0, AI_MAX_COMMENT_LENGTH))
+        .filter(Boolean);
 
       const input = {
         title: ticket.title,
-        description: [
-          ticket.description,
-          recentComments
-            ? `Recent public comments:\n${recentComments}`
-            : "",
-        ].filter(Boolean).join("\n\n"),
+        description: ticket.description,
+        ...(recentComments.length > 0 ? { comments: recentComments } : {}),
       };
 
       res.status(200);
@@ -70,7 +98,7 @@ export const aiController = {
         res.destroy(error instanceof Error ? error : undefined);
         return;
       }
-      next(error);
+      next(toSafeControllerError(error));
     }
   },
 
@@ -86,21 +114,23 @@ export const aiController = {
         user.role
       );
 
-      const suggestion = await aiService.categoriseTicket({
-        title: ticket.title,
-        description: ticket.description,
-      });
+      const { suggestion, provider } = await aiService.categoriseTicketWithMeta(
+        {
+          title: ticket.title,
+          description: ticket.description,
+        }
+      );
 
       res.status(200).json({
         data: suggestion,
         error: null,
         meta: {
           saved: false,
-          provider: aiService.providerName,
+          provider,
         },
       });
     } catch (error) {
-      next(error);
+      next(toSafeControllerError(error));
     }
   },
 };

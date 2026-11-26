@@ -26,6 +26,10 @@ export function errorHandler(
     message = error.message || "Access forbidden";
   } else if (statusCode === 404) {
     message = "Ticket not found";
+  } else if (statusCode === 422) {
+    message = error.message || "Request blocked by safety policy";
+  } else if (statusCode === 502 || statusCode === 503 || statusCode === 504) {
+    message = "AI unavailable — reply manually.";
   }
 
   res.status(statusCode).json({
