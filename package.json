@@ -42,6 +42,7 @@
     "prisma@6.19.0": true
   },
   "dependencies": {
+    "@google/genai": "^3.6.1",
     "@prisma/client": "^6.19.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",

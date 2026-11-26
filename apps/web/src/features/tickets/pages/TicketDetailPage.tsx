@@ -6,17 +6,32 @@ import {
   useTicketComments,
   useAddTicketComment,
   useUpdateTicketStatus,
+  useApplyTicketSuggestions,
 } from "../hooks/useTicketDetails";
 import AppLayout from "../../../components/AppLayout";
 import Modal from "../../../components/Modal";
 import Button from "../../../components/Button";
 import type { TicketStatus } from "../../../types/ticket";
+import { categoriseTicket, suggestTicketReply } from "../api/ai.api";
+import {
+  formatAiErrorMessage,
+  streamTextResponse,
+  type TicketAiSuggestion,
+} from "../api/ai-response";
 
 export default function TicketDetailPage() {
   const { user, token } = useAuth();
   const [comment, setComment] = useState("");
   const [status, setStatus] = useState<TicketStatus>("open");
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [replyDraft, setReplyDraft] = useState("");
+  const [replyError, setReplyError] = useState("");
+  const [isSuggestingReply, setIsSuggestingReply] = useState(false);
+  const [copyMessage, setCopyMessage] = useState("");
+  const [suggestion, setSuggestion] = useState<TicketAiSuggestion | null>(null);
+  const [categoriseError, setCategoriseError] = useState("");
+  const [isCategorising, setIsCategorising] = useState(false);
+  const [suggestionsApplied, setSuggestionsApplied] = useState(false);
 
   const ticketId = Number(window.location.hash.split("/")[1]);
 
@@ -24,10 +39,78 @@ export default function TicketDetailPage() {
   const commentsQuery = useTicketComments(token, ticketId);
   const addComment = useAddTicketComment(token, ticketId);
   const updateStatus = useUpdateTicketStatus(token, ticketId);
+  const applySuggestions = useApplyTicketSuggestions(token, ticketId);
 
   const ticket = ticketQuery.data;
   const isAgent = user?.role === "agent" || user?.role === "admin";
   const canAddComment = isAgent;
+
+  async function handleSuggestReply() {
+    if (!token) {
+      setReplyError("Authentication required. Please sign in again.");
+      return;
+    }
+
+    setReplyDraft("");
+    setReplyError("");
+    setCopyMessage("");
+    setIsSuggestingReply(true);
+
+    try {
+      const response = await suggestTicketReply(token, ticketId);
+      for await (const chunk of streamTextResponse(response)) {
+        setReplyDraft((current) => current + chunk);
+      }
+    } catch (error) {
+      setReplyError(formatAiErrorMessage(error));
+    } finally {
+      setIsSuggestingReply(false);
+    }
+  }
+
+  async function handleCategorise() {
+    if (!token) {
+      setCategoriseError("Authentication required. Please sign in again.");
+      return;
+    }
+
+    setCategoriseError("");
+    setSuggestion(null);
+    setSuggestionsApplied(false);
+    setIsCategorising(true);
+
+    try {
+      const result = await categoriseTicket(token, ticketId);
+      setSuggestion(result.suggestion);
+    } catch (error) {
+      setCategoriseError(formatAiErrorMessage(error));
+    } finally {
+      setIsCategorising(false);
+    }
+  }
+
+  async function handleCopyDraft() {
+    try {
+      await navigator.clipboard.writeText(replyDraft);
+      setCopyMessage("Draft copied to clipboard.");
+      setReplyError("");
+    } catch {
+      setCopyMessage("");
+      setReplyError("Could not copy the draft. Select and copy the text manually.");
+    }
+  }
+
+  async function handleApplySuggestions() {
+    if (!suggestion) return;
+
+    try {
+      await applySuggestions.mutateAsync(suggestion);
+      setSuggestionsApplied(true);
+      setCategoriseError("");
+    } catch (error) {
+      setCategoriseError(formatAiErrorMessage(error));
+    }
+  }
 
   useEffect(() => {
     if (ticket) {
@@ -151,6 +234,162 @@ export default function TicketDetailPage() {
             </div>
           </div>
         </section>
+
+        {isAgent && (
+          <section className="overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-lg shadow-blue-100/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20">
+            <div className="relative overflow-hidden border-b border-blue-900/20 bg-gradient-to-r from-slate-950 via-blue-950 to-blue-800 px-5 py-5 text-white sm:px-7">
+              <div className="pointer-events-none absolute -right-10 -top-20 h-48 w-48 rounded-full border border-white/10" />
+              <div className="pointer-events-none absolute -right-5 -top-14 h-36 w-36 rounded-full border border-white/10" />
+              <div className="relative">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
+                SupportDesk AI · Mock provider
+              </p>
+              <h2 className="mt-1 text-lg font-bold text-white">
+                Work through this ticket faster
+              </h2>
+              <p className="mt-1 text-sm text-blue-100/80">
+                Suggestions are drafts only. Nothing is sent or saved unless you choose an action.
+              </p>
+              </div>
+            </div>
+
+            <div className="grid gap-5 bg-slate-50/70 p-5 dark:bg-slate-950/30 sm:p-7 lg:grid-cols-2">
+              <div className="min-w-0 rounded-xl border border-blue-100 bg-white p-4 shadow-sm shadow-blue-100/40 transition hover:shadow-md hover:shadow-blue-100/60 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/10 sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold text-slate-900 dark:text-white">
+                      Suggested reply
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      Review and edit the draft before using it.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => void handleSuggestReply()}
+                    disabled={isSuggestingReply}
+                  >
+                    {isSuggestingReply ? "Generating..." : "Suggest Reply"}
+                  </Button>
+                </div>
+
+                {(replyDraft || isSuggestingReply) && (
+                  <label className="mt-4 block">
+                    <span className="sr-only">Suggested reply draft</span>
+                    <textarea
+                      value={replyDraft}
+                      onChange={(event) => {
+                        setReplyDraft(event.target.value);
+                        setCopyMessage("");
+                      }}
+                      placeholder="Your generated reply draft will appear here..."
+                      rows={5}
+                      className="w-full resize-y rounded-xl border border-blue-200 bg-blue-50/30 p-3 text-sm leading-6 text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:ring-blue-950"
+                    />
+                  </label>
+                )}
+
+                {replyError && (
+                  <p role="alert" className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                    {replyError}
+                  </p>
+                )}
+                {copyMessage && (
+                  <p role="status" className="mt-3 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                    {copyMessage}
+                  </p>
+                )}
+                {replyDraft.trim() && !isSuggestingReply && (
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Draft only · not sent to the customer
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => void handleCopyDraft()}
+                    >
+                      Copy draft
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="min-w-0 rounded-xl border border-indigo-100 bg-white p-4 shadow-sm shadow-indigo-100/40 transition hover:shadow-md hover:shadow-indigo-100/60 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/10 sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold text-slate-900 dark:text-white">
+                      Category &amp; priority
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      Review suggestions before applying them.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => void handleCategorise()}
+                    disabled={isCategorising}
+                  >
+                    {isCategorising
+                      ? "Analysing..."
+                      : "Auto-categorise + Priority"}
+                  </Button>
+                </div>
+
+                {categoriseError && (
+                  <p role="alert" className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                    {categoriseError}
+                  </p>
+                )}
+
+                {suggestion && (
+                  <div className="mt-4 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50/70 to-white p-4 dark:border-slate-700 dark:from-slate-800 dark:to-slate-900">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          Suggested category
+                        </p>
+                        <p className="mt-1 font-semibold text-slate-900 dark:text-white">
+                          {suggestion.category}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          Suggested priority
+                        </p>
+                        <p className="mt-1 font-semibold text-slate-900 dark:text-white">
+                          {suggestion.priority}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                      Not saved automatically. Apply only after reviewing.
+                    </p>
+                    {suggestionsApplied ? (
+                      <p role="status" className="mt-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                        Suggestions applied to this ticket.
+                      </p>
+                    ) : (
+                      <Button
+                        type="button"
+                        className="mt-4"
+                        onClick={() => void handleApplySuggestions()}
+                        disabled={applySuggestions.isPending}
+                      >
+                        {applySuggestions.isPending ? "Applying..." : "Apply Suggestions"}
+                      </Button>
+                    )}
+                  </div>
+                )}
+                {!suggestion && !isCategorising && !categoriseError && (
+                  <p className="mt-4 rounded-lg border border-dashed border-violet-200 px-3 py-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                    No suggestions yet. Run categorisation to preview a category and priority.
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {isAgent && (
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">

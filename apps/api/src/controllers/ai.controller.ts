@@ -96,7 +96,7 @@ export const aiController = {
         error: null,
         meta: {
           saved: false,
-          provider: "mock",
+          provider: aiService.providerName,
         },
       });
     } catch (error) {

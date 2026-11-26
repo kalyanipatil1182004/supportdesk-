@@ -88,7 +88,11 @@ export async function addTicketComment(
 export async function updateTicket(
   token: string,
   ticketId: number,
-  data: { status?: Ticket["status"] }
+  data: {
+    status?: Ticket["status"];
+    category?: string | null;
+    priority?: Ticket["priority"];
+  }
 ): Promise<ApiEnvelope<Ticket>> {
   return apiRequest<ApiEnvelope<Ticket>>(
     `/tickets/${ticketId}`,

@@ -116,3 +116,38 @@ export function useUpdateTicketStatus(
     },
   });
 }
+
+export function useApplyTicketSuggestions(
+  token: string | null,
+  ticketId: number
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (suggestions: {
+      category: string;
+      priority: Ticket["priority"];
+    }) => {
+      if (!token) throw new Error("Authentication required.");
+
+      const response = await updateTicket(token, ticketId, suggestions);
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      if (!response.data) {
+        throw new Error("Updated ticket was not returned by the server.");
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["ticket", token, ticketId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tickets"],
+      });
+    },
+  });
+}
