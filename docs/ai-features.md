@@ -48,6 +48,7 @@ The Gemini integration uses the `gemini-2.5-flash` model.
 - Uses ticket details and recent comments as context.
 - Generates a customer-facing reply draft.
 - Streams the response as `text/plain`.
+- Reports the provider actually used in the `X-AI-Provider` response header.
 - The generated draft can be reviewed, edited and copied.
 - The AI does not automatically send the reply to the customer.
 
@@ -141,10 +142,12 @@ Endpoints:
 
 - `POST /ai/tickets/:ticketId/suggest-reply`
   - Returns a streamed `text/plain` reply draft.
+  - Reports the provider used (`gemini` or `mock`) in `X-AI-Provider`.
 
 - `POST /ai/tickets/:ticketId/categorise`
   - Returns category and priority suggestions in JSON.
   - Confirms that suggestions have not been saved automatically.
+  - Reports the provider actually used (`gemini` or `mock`) in `meta.provider`.
 
 Both endpoints use AI rate limiting.
 
