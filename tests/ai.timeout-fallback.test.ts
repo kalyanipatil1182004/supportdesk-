@@ -109,6 +109,10 @@ describe("Day 17 AI timeout and safe fallback", () => {
       .spyOn(internalService.provider, "categorise")
       .mockRejectedValueOnce(new Error("Temporary network error with secret details"))
       .mockResolvedValueOnce({ category: "Technical", priority: "P2" });
+    const suggestReplyMock = jest
+      .spyOn(internalService.provider, "suggestReply")
+      .mockRejectedValueOnce(new Error("Temporary network error"))
+      .mockResolvedValueOnce("Gemini draft reply.");
 
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
@@ -128,6 +132,54 @@ describe("Day 17 AI timeout and safe fallback", () => {
     });
     expect(categoriseMock).toHaveBeenCalledTimes(2);
     expect(errorSpy).toHaveBeenCalledTimes(1);
+
+    await expect(service.suggestReplyWithMeta(sampleInput)).resolves.toEqual({
+      reply:
+        "Thank you for reporting: Cannot open dashboard. We have received your request and our support team will review it. We will share an update after checking the details.",
+      provider: "mock",
+    });
+    await expect(service.suggestReplyWithMeta(sampleInput)).resolves.toEqual({
+      reply: "Gemini draft reply.",
+      provider: "gemini",
+    });
+    expect(suggestReplyMock).toHaveBeenCalledTimes(2);
+    expect(service.providerName).toBe("gemini");
+    expect(errorSpy).toHaveBeenCalledTimes(2);
+  });
+
+  test("reports Mock for requests when Gemini is not configured", async () => {
+    delete process.env.GEMINI_API_KEY;
+    const service = new AiService();
+
+    expect(service.providerName).toBe("mock");
+    await expect(service.suggestReplyWithMeta(sampleInput)).resolves.toMatchObject({
+      provider: "mock",
+    });
+    await expect(service.categoriseTicketWithMeta(sampleInput)).resolves.toMatchObject({
+      provider: "mock",
+    });
+  });
+
+  test("reports Gemini when both AI requests succeed with the configured provider", async () => {
+    process.env.GEMINI_API_KEY = "test-only-dummy-key-value-not-real";
+    const service = new AiService(undefined, { timeoutMs: 500 });
+    const internalService = service as unknown as { provider: AiProvider };
+    jest
+      .spyOn(internalService.provider, "suggestReply")
+      .mockResolvedValue("Gemini draft reply.");
+    jest.spyOn(internalService.provider, "categorise").mockResolvedValue({
+      category: "Technical",
+      priority: "P2",
+    });
+
+    await expect(service.suggestReplyWithMeta(sampleInput)).resolves.toEqual({
+      reply: "Gemini draft reply.",
+      provider: "gemini",
+    });
+    await expect(service.categoriseTicketWithMeta(sampleInput)).resolves.toEqual({
+      suggestion: { category: "Technical", priority: "P2" },
+      provider: "gemini",
+    });
   });
 
   test("errorHandler hides provider internals and returns exact fallback message for 502/503/504", () => {

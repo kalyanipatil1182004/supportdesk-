@@ -1,7 +1,7 @@
 import { apiRequestResponse } from "../../../lib/api";
 import type { ApiEnvelope } from "../../../types/api";
-import { parseCategoriseResponse } from "./ai-response";
-import type { TicketAiSuggestion } from "./ai-response";
+import { parseAiProvider, parseCategoriseResponse } from "./ai-response";
+import type { AiProviderName, TicketAiSuggestion } from "./ai-response";
 
 interface CategoriseResponse extends ApiEnvelope<unknown> {
   meta: {
@@ -13,7 +13,7 @@ interface CategoriseResponse extends ApiEnvelope<unknown> {
 export async function suggestTicketReply(
   token: string,
   ticketId: number
-): Promise<Response> {
+): Promise<{ response: Response; provider: AiProviderName | null }> {
   const response = await apiRequestResponse(
     `/ai/tickets/${ticketId}/suggest-reply`,
     {
@@ -26,13 +26,20 @@ export async function suggestTicketReply(
     throw new Error("The AI service returned an unexpected reply format.");
   }
 
-  return response;
+  return {
+    response,
+    provider: parseAiProvider(response.headers.get("x-ai-provider")),
+  };
 }
 
 export async function categoriseTicket(
   token: string,
   ticketId: number
-): Promise<{ suggestion: TicketAiSuggestion; saved: false }> {
+): Promise<{
+  suggestion: TicketAiSuggestion;
+  provider: AiProviderName | null;
+  saved: false;
+}> {
   const response = await apiRequestResponse(
     `/ai/tickets/${ticketId}/categorise`,
     {
@@ -47,8 +54,5 @@ export async function categoriseTicket(
   }
   const result = (await response.json()) as CategoriseResponse;
 
-  return {
-    suggestion: parseCategoriseResponse(result),
-    saved: false,
-  };
+  return { ...parseCategoriseResponse(result), saved: false };
 }

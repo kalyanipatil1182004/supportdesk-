@@ -2,9 +2,15 @@ import type { TicketPriority } from "../../../types/ticket";
 
 export const AI_UNAVAILABLE_MESSAGE = "AI unavailable — reply manually.";
 
+export type AiProviderName = "gemini" | "mock";
+
 export interface TicketAiSuggestion {
   category: "General" | "Technical" | "Account" | "Network" | "Billing";
   priority: TicketPriority;
+}
+
+export function parseAiProvider(value: unknown): AiProviderName | null {
+  return value === "gemini" || value === "mock" ? value : null;
 }
 
 function isTicketCategory(value: unknown): value is TicketAiSuggestion["category"] {
@@ -68,14 +74,17 @@ export function parseTicketAiSuggestion(value: unknown): TicketAiSuggestion {
   };
 }
 
-export function parseCategoriseResponse(value: unknown): TicketAiSuggestion {
+export function parseCategoriseResponse(value: unknown): {
+  suggestion: TicketAiSuggestion;
+  provider: AiProviderName | null;
+} {
   if (!value || typeof value !== "object") {
     throw new Error("The AI service returned an invalid response.");
   }
 
   const response = value as {
     data?: unknown;
-    meta?: { saved?: unknown };
+    meta?: { saved?: unknown; provider?: unknown };
   };
 
   if (response.meta?.saved !== false) {
@@ -88,7 +97,10 @@ export function parseCategoriseResponse(value: unknown): TicketAiSuggestion {
     throw new Error("The AI service did not return a suggestion.");
   }
 
-  return parseTicketAiSuggestion(response.data);
+  return {
+    suggestion: parseTicketAiSuggestion(response.data),
+    provider: parseAiProvider(response.meta?.provider),
+  };
 }
 
 export async function* streamTextResponse(

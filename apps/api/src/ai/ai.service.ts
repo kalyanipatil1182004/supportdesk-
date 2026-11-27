@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import {
   MockAiProvider,
   type AiProvider,
@@ -20,10 +22,12 @@ export interface AiServiceOptions {
   fallbackProvider?: AiProvider;
 }
 
+export type AiProviderName = "gemini" | "mock";
+
 export class AiService {
   private readonly mockProvider = new MockAiProvider();
   private readonly provider: AiProvider;
-  private readonly activeProvider: "gemini" | "mock";
+  private readonly activeProvider: AiProviderName;
   private readonly fallbackProvider?: AiProvider;
   private readonly timeoutMs: number;
 
@@ -105,30 +109,38 @@ export class AiService {
   async *streamSuggestedReply(
     input: TicketAiInput
   ): AsyncGenerator<string> {
-    const validatedInput = validateAndGuardAiInput(input);
-    enforceAiModeration(validatedInput);
-    const guardedInput = maskAiInputPii(validatedInput);
-
-    const { result: draft } = await this.withFallback(
-      async (provider, signal) => {
-        const reply =
-          provider.suggestReply.length >= 2
-            ? await provider.suggestReply(guardedInput, signal)
-            : await provider.suggestReply(guardedInput);
-        return validateSuggestedReplyOutput(reply);
-      }
-    );
-
-    const chunks = draft.match(/\S+\s*/g) ?? [];
+    const { reply } = await this.suggestReplyWithMeta(input);
+    const chunks = reply.match(/\S+\s*/g) ?? [];
 
     for (const chunk of chunks) {
       yield chunk;
     }
   }
 
+  async suggestReplyWithMeta(input: TicketAiInput): Promise<{
+    reply: string;
+    provider: AiProviderName;
+  }> {
+    const validatedInput = validateAndGuardAiInput(input);
+    enforceAiModeration(validatedInput);
+    const guardedInput = maskAiInputPii(validatedInput);
+
+    const { result: reply, providerUsed } = await this.withFallback(
+      async (provider, signal) => {
+        const draft =
+          provider.suggestReply.length >= 2
+            ? await provider.suggestReply(guardedInput, signal)
+            : await provider.suggestReply(guardedInput);
+        return validateSuggestedReplyOutput(draft);
+      }
+    );
+
+    return { reply, provider: providerUsed };
+  }
+
   async categoriseTicketWithMeta(input: TicketAiInput): Promise<{
     suggestion: ValidatedTicketAiSuggestion;
-    provider: "gemini" | "mock";
+    provider: AiProviderName;
   }> {
     const validatedInput = validateAndGuardAiInput(input);
     enforceAiModeration(validatedInput);

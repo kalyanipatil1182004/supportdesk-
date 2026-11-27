@@ -16,6 +16,7 @@ import { categoriseTicket, suggestTicketReply } from "../api/ai.api";
 import {
   formatAiErrorMessage,
   streamTextResponse,
+  type AiProviderName,
   type TicketAiSuggestion,
 } from "../api/ai-response";
 
@@ -32,6 +33,7 @@ export default function TicketDetailPage() {
   const [categoriseError, setCategoriseError] = useState("");
   const [isCategorising, setIsCategorising] = useState(false);
   const [suggestionsApplied, setSuggestionsApplied] = useState(false);
+  const [aiProvider, setAiProvider] = useState<AiProviderName | null>(null);
 
   const ticketId = Number(window.location.hash.split("/")[1]);
 
@@ -54,11 +56,13 @@ export default function TicketDetailPage() {
     setReplyDraft("");
     setReplyError("");
     setCopyMessage("");
+    setAiProvider(null);
     setIsSuggestingReply(true);
 
     try {
-      const response = await suggestTicketReply(token, ticketId);
-      for await (const chunk of streamTextResponse(response)) {
+      const result = await suggestTicketReply(token, ticketId);
+      setAiProvider(result.provider);
+      for await (const chunk of streamTextResponse(result.response)) {
         setReplyDraft((current) => current + chunk);
       }
     } catch (error) {
@@ -76,12 +80,14 @@ export default function TicketDetailPage() {
 
     setCategoriseError("");
     setSuggestion(null);
+    setAiProvider(null);
     setSuggestionsApplied(false);
     setIsCategorising(true);
 
     try {
       const result = await categoriseTicket(token, ticketId);
       setSuggestion(result.suggestion);
+      setAiProvider(result.provider);
     } catch (error) {
       setCategoriseError(formatAiErrorMessage(error));
     } finally {
@@ -242,7 +248,11 @@ export default function TicketDetailPage() {
               <div className="pointer-events-none absolute -right-5 -top-14 h-36 w-36 rounded-full border border-white/10" />
               <div className="relative">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
-                SupportDesk AI · Mock provider
+                SupportDesk AI · {aiProvider === "gemini"
+                  ? "Gemini provider"
+                  : aiProvider === "mock"
+                    ? "Mock provider"
+                    : "Provider not reported"}
               </p>
               <h2 className="mt-1 text-lg font-bold text-white">
                 Work through this ticket faster

@@ -82,12 +82,15 @@ export const aiController = {
         ...(recentComments.length > 0 ? { comments: recentComments } : {}),
       };
 
+      const { reply, provider } = await aiService.suggestReplyWithMeta(input);
+
       res.status(200);
       res.setHeader("Content-Type", "text/plain; charset=utf-8");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("X-AI-Provider", provider);
 
-      for await (const chunk of aiService.streamSuggestedReply(input)) {
+      for (const chunk of reply.match(/\S+\s*/g) ?? []) {
         if (res.destroyed) return;
         res.write(chunk);
       }

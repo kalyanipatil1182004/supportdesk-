@@ -81,6 +81,7 @@ describe("AI features integration", () => {
 
     expect(response.text).toContain("Thank you for reporting");
     expect(response.headers["content-type"]).toContain("text/plain");
+    expect(response.headers["x-ai-provider"]).toBe("mock");
   });
 
   test("Agent receives validated category and priority without saving", async () => {

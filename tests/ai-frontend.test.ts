@@ -1,5 +1,6 @@
 import {
   formatAiErrorMessage,
+  parseAiProvider,
   parseCategoriseResponse,
   parseTicketAiSuggestion,
   streamTextResponse,
@@ -63,13 +64,29 @@ describe("frontend AI response handling", () => {
     ).toThrow("The AI service returned an invalid suggestion.");
   });
 
+  test("accepts only known AI provider metadata", () => {
+    expect(parseAiProvider("gemini")).toBe("gemini");
+    expect(parseAiProvider("mock")).toBe("mock");
+    expect(parseAiProvider("unknown")).toBeNull();
+    expect(parseAiProvider(null)).toBeNull();
+  });
+
   test("requires categorisation response to explicitly remain unsaved", () => {
     expect(
       parseCategoriseResponse({
         data: { category: "Technical", priority: "P3" },
         meta: { saved: false, provider: "mock" },
       })
-    ).toEqual({ category: "Technical", priority: "P3" });
+    ).toEqual({
+      suggestion: { category: "Technical", priority: "P3" },
+      provider: "mock",
+    });
+    expect(
+      parseCategoriseResponse({
+        data: { category: "Technical", priority: "P3" },
+        meta: { saved: false },
+      }).provider
+    ).toBeNull();
     expect(() =>
       parseCategoriseResponse({
         data: { category: "Technical", priority: "P3" },
