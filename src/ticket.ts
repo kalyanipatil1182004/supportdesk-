@@ -2,7 +2,7 @@ export function generateTicketId(
   sequence: number,
   date = new Date()
 ): string {
-  if (!Number.isInteger(sequence) || sequence < 1) {
+  if (!Number.isSafeInteger(sequence) || sequence < 1) {
     throw new Error("Sequence must be a positive integer");
   }
 

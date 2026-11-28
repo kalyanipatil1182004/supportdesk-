@@ -1,0 +1,5 @@
+ALTER TABLE "Ticket"
+ADD COLUMN IF NOT EXISTS "seedId" TEXT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Ticket_seedId_key"
+ON "Ticket"("seedId");

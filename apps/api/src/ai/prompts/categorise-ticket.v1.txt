@@ -1,0 +1,26 @@
+﻿# Categorise Ticket Prompt — v1
+
+Task:
+Suggest a category and priority for the support ticket.
+
+Ticket:
+- Title: {{title}}
+- Description: {{description}}
+
+Allowed categories:
+General, Technical, Account, Network, Billing
+
+Allowed priorities:
+P1, P2, P3, P4
+
+Output:
+Return structured JSON with exactly these fields:
+{
+  "category": "General",
+  "priority": "P3"
+}
+
+Rules:
+- Use only the allowed category and priority values.
+- Do not include additional fields or explanatory text.
+- Do not invent missing ticket details.

@@ -1,0 +1,142 @@
+﻿[
+  {
+    "id": 1,
+    "title": "Unable to login to portal",
+    "description": "The login page shows an error when I enter my password.",
+    "expectedCategory": "Account",
+    "expectedPriority": "P2"
+  },
+  {
+    "id": 2,
+    "title": "Forgot account password",
+    "description": "I cannot remember my password and need help resetting it.",
+    "expectedCategory": "Account",
+    "expectedPriority": "P2"
+  },
+  {
+    "id": 3,
+    "title": "Payment failed",
+    "description": "My online payment failed but the amount appears deducted.",
+    "expectedCategory": "Billing",
+    "expectedPriority": "P1"
+  },
+  {
+    "id": 4,
+    "title": "Invoice not generated",
+    "description": "I completed the payment but cannot download my invoice.",
+    "expectedCategory": "Billing",
+    "expectedPriority": "P2"
+  },
+  {
+    "id": 5,
+    "title": "Office WiFi not connecting",
+    "description": "The office WiFi is unavailable on my laptop.",
+    "expectedCategory": "Network",
+    "expectedPriority": "P2"
+  },
+  {
+    "id": 6,
+    "title": "Internet connection keeps dropping",
+    "description": "The internet connection disconnects frequently.",
+    "expectedCategory": "Network",
+    "expectedPriority": "P2"
+  },
+  {
+    "id": 7,
+    "title": "Application crashes",
+    "description": "The application shows an error and closes unexpectedly.",
+    "expectedCategory": "Technical",
+    "expectedPriority": "P1"
+  },
+  {
+    "id": 8,
+    "title": "Software bug in dashboard",
+    "description": "The dashboard has a bug and does not display the correct data.",
+    "expectedCategory": "Technical",
+    "expectedPriority": "P2"
+  },
+  {
+    "id": 9,
+    "title": "Update account profile",
+    "description": "I need assistance updating my account profile information.",
+    "expectedCategory": "Account",
+    "expectedPriority": "P3"
+  },
+  {
+    "id": 10,
+    "title": "Refund not received",
+    "description": "My refund has not arrived after the payment was reversed.",
+    "expectedCategory": "Billing",
+    "expectedPriority": "P1"
+  },
+  {
+    "id": 11,
+    "title": "Network connection unavailable",
+    "description": "The network connection is unavailable in my office.",
+    "expectedCategory": "Network",
+    "expectedPriority": "P1"
+  },
+  {
+    "id": 12,
+    "title": "Technical error while uploading",
+    "description": "A technical error occurs whenever I upload a document.",
+    "expectedCategory": "Technical",
+    "expectedPriority": "P2"
+  },
+  {
+    "id": 13,
+    "title": "Account profile details incorrect",
+    "description": "My account profile contains incorrect details.",
+    "expectedCategory": "Account",
+    "expectedPriority": "P3"
+  },
+  {
+    "id": 14,
+    "title": "Billing amount is incorrect",
+    "description": "The invoice shows an incorrect billing amount.",
+    "expectedCategory": "Billing",
+    "expectedPriority": "P2"
+  },
+  {
+    "id": 15,
+    "title": "General support request",
+    "description": "I need help understanding how to use the support portal.",
+    "expectedCategory": "General",
+    "expectedPriority": "P3"
+  },
+  {
+    "id": 16,
+    "title": "General service enquiry",
+    "description": "Please provide information about the available support services.",
+    "expectedCategory": "General",
+    "expectedPriority": "P4"
+  },
+  {
+    "id": 17,
+    "title": "Login error after password reset",
+    "description": "I reset my password but still cannot login.",
+    "expectedCategory": "Account",
+    "expectedPriority": "P1"
+  },
+  {
+    "id": 18,
+    "title": "Internet is very slow",
+    "description": "The internet connection is extremely slow today.",
+    "expectedCategory": "Network",
+    "expectedPriority": "P3"
+  },
+  {
+    "id": 19,
+    "title": "Application software error",
+    "description": "The software displays an unexpected error during normal use.",
+    "expectedCategory": "Technical",
+    "expectedPriority": "P2"
+  },
+  {
+    "id": 20,
+    "title": "Payment invoice query",
+    "description": "I have a question about the invoice for my recent payment.",
+    "expectedCategory": "Billing",
+    "expectedPriority": "P3"
+  }
+]
